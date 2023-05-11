@@ -144,6 +144,66 @@ module.exports = {
             permissions: ['emails.remove'],
 
         },
+        createEmail: {
+            params: {
+                id: { type: "string", optional: false },
+            },
+            async handler(ctx) {
+                const params = Object.assign({}, ctx.params);
+
+
+                const email = await this.resolveEntities(null, { id: params.id });
+
+                const options = { meta: { userID: email.owner } };
+                const domain = await ctx.call('v1.domains.resolve', {
+                    id: email.domain
+                }, options)
+                const owner = await ctx.call('v1.accounts.resolve', {
+                    id: domain.owner
+                }, options)
+
+
+
+                const data = {
+                    "active": 1,
+                    "domain": domain.domain,
+                    "local_part": email.username,
+                    "name": email.name,
+                    "password": generator.generate({
+                        length: 20,
+                        numbers: true
+                    }),
+                    "quota": email.quota,
+                    "force_pw_update": 1
+                }
+
+                if (email.password) {
+                    data.password = email.password;
+                    data.force_pw_update = 0
+                } else {
+                    await ctx.call('v1.mailer.send', {
+                        to: owner.email,
+                        subject: `New Email Account Created For ${email.username}@${domain.domain}`,
+                        text: `Address: ${email.username}@${domain.domain}
+    Password: ${data.password}
+    
+    This is a one time password please create a new password at https://mail.one-host.ca/`
+                    })
+                }
+
+
+                const maillbox = await ctx.call('v1.mailcow.domain.mailbox.create', data)
+
+                const result = maillbox.shift()
+                console.log(result)
+
+                await this.updateEntity(null, {
+                    id: email.id,
+                    status: `${result.type}-${result.msg.join()}`
+                })
+                this.logger.info(`Creating email account ${email.username}@${domain.domain}`, result)
+            }
+        },
     },
 
     /**
@@ -156,56 +216,7 @@ module.exports = {
 
         },
         async "emails.created"(ctx) {
-            const email = ctx.params.data;
-
-            const options = { meta: { userID: email.owner } };
-            const domain = await ctx.call('v1.domains.resolve', {
-                id: email.domain
-            }, options)
-            const owner = await ctx.call('v1.accounts.resolve', {
-                id: domain.owner
-            }, options)
-
-
-
-            const data = {
-                "active": 1,
-                "domain": domain.domain,
-                "local_part": email.username,
-                "name": email.name,
-                "password": generator.generate({
-                    length: 20,
-                    numbers: true
-                }),
-                "quota": email.quota,
-                "force_pw_update": 1
-            }
-
-            if (email.password) {
-                data.password = email.password;
-                data.force_pw_update = 0
-            } else {
-                await ctx.call('v1.mailer.send', {
-                    to: owner.email,
-                    subject: `New Email Account Created For ${email.username}@${domain.domain}`,
-                    text: `Address: ${email.username}@${domain.domain}
-Password: ${data.password}
-
-This is a one time password please create a new password at https://mail.one-host.ca/`
-                })
-            }
-
-
-            const maillbox = await ctx.call('v1.mailcow.domain.mailbox.create', data)
-
-            const result = maillbox.shift()
-            console.log(result)
-
-            await this.updateEntity(null, {
-                id: email.id,
-                status: `${result.type}-${result.msg.join()}`
-            })
-            this.logger.info(`Creating email account ${email.username}@${domain.domain}`, result)
+            await this.actions.createEmail({ id: ctx.params.data.id }, { parentCtx: ctx })
         },
         async "emails.removed"(ctx) {
             const email = ctx.params.data;

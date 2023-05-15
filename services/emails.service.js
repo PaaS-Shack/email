@@ -151,18 +151,17 @@ module.exports = {
             async handler(ctx) {
                 const params = Object.assign({}, ctx.params);
 
-
                 const email = await this.resolveEntities(null, { id: params.id });
 
                 const options = { meta: { userID: email.owner } };
+
                 const domain = await ctx.call('v1.domains.resolve', {
                     id: email.domain
-                }, options)
+                }, options);
+
                 const owner = await ctx.call('v1.accounts.resolve', {
                     id: domain.owner
-                }, options)
-
-
+                }, options);
 
                 const data = {
                     "active": 1,
@@ -179,29 +178,30 @@ module.exports = {
 
                 if (email.password) {
                     data.password = email.password;
-                    data.force_pw_update = 0
+                    data.force_pw_update = 0;
                 } else {
                     await ctx.call('v1.mailer.send', {
                         to: owner.email,
                         subject: `New Email Account Created For ${email.username}@${domain.domain}`,
                         text: `Address: ${email.username}@${domain.domain}
-    Password: ${data.password}
-    
-    This is a one time password please create a new password at https://mail.one-host.ca/`
+Password: ${data.password}
+
+This is a one time password please create a new password at https://mail.one-host.ca/`
                     })
                 }
 
-
                 const maillbox = await ctx.call('v1.mailcow.domain.mailbox.create', data)
 
-                const result = maillbox.shift()
+                const result = maillbox.shift();
+
                 console.log(result)
 
                 await this.updateEntity(null, {
                     id: email.id,
                     status: `${result.type}-${result.msg.join()}`
-                })
-                this.logger.info(`Creating email account ${email.username}@${domain.domain}`, result)
+                });
+
+                this.logger.info(`Creating email account ${email.username}@${domain.domain}`, result);
             }
         },
     },

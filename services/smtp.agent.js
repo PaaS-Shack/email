@@ -113,10 +113,7 @@ module.exports = {
 						if (err)
 							console.log("Error:", err)
 
-						broker.call('v1.emails.create', {
-							body: parsed,
-							session
-						}).then(() => console.log(session))
+						console.log(session)
 					});
 				}
 			});

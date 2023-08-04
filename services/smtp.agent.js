@@ -14,7 +14,7 @@ module.exports = {
 	version: 1,
 
 	mixins: [
-        
+
 	],
 
 	/**
@@ -107,13 +107,19 @@ module.exports = {
 							err.responseCode = 552;
 							return callback(err);
 						}
-						callback(null, 'Message queued as abcdef'); // accept the message once the stream is ended
 					});
 					parser(stream, {}, (err, parsed) => {
 						if (err)
 							console.log("Error:", err)
 
-						console.log(session)
+						broker.call('v1.emails.messages.create', {
+							body: parsed,
+							session
+						}).catch((err) => {
+							broker.emit('smtp.error', { err, session })
+						}).then(() => {
+							callback(null, 'Message queued as abcdef'); // accept the message once the stream is ended
+						})
 					});
 				}
 			});

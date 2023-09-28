@@ -206,8 +206,7 @@ module.exports = {
 
             const exchange = connectionPool.exchanges.get("default");
 
-
-
+            // create the connection config
             const connectionConfig = {
                 host: exchange.exchange,
                 port: 465,

@@ -131,7 +131,7 @@ module.exports = {
 	 */
 	settings: {
 		// SMTP server settings
-		port: 2525,
+		port: 25,
 		host: "localhost",
 		secure: true,
 		banner: "Welcome to My SMTP Server",
@@ -206,12 +206,35 @@ module.exports = {
 				lmtp: this.settings.lmtp,
 				socketTimeout: this.settings.socketTimeout,
 				closeTimeout: this.settings.closeTimeout,
-				onConnect: this.handleConnect.bind(this),
-				onAuth: this.validateAuthentication.bind(this),
-				onMailFrom: this.handleMailFrom.bind(this),
-				onRcptTo: this.handleRcptTo.bind(this),
-				onData: this.handleData.bind(this),
-				onClose: this.handleQuit.bind(this)
+				// function callbacks
+				onConnect: (session, callback) => {
+					this.handleConnect(session)
+						.then(() => callback())
+						.catch((error) => callback(error));
+				},
+				onAuth: (auth, session, callback) => {
+					this.validateAuthentication(auth, session)
+						.then(() => callback(null, { user: session.user }))
+						.catch((error) => callback(error));
+				},
+				onMailFrom: (address, session, callback) => {
+					this.handleMailFrom(address, session)
+						.then(() => callback())
+						.catch((error) => callback(error));
+				},
+				onRcptTo: (address, session, callback) => {
+					this.handleRcptTo(address, session)
+						.then(() => callback())
+						.catch((error) => callback(error));
+				},
+				onData: (stream, session, callback) => {
+					this.handleData(stream, session)
+						.then(() => callback())
+						.catch((error) => callback(error));
+				},
+				onClose: (session) => {
+					this.handleQuit(session);
+				}
 			});
 
 			this.server = server;
@@ -286,11 +309,14 @@ module.exports = {
 		 * @returns {Boolean} True if the quota is not exceeded
 		 */
 		async isQuotaExceeded(address, session) {
-			return true;
+			this.logger.info("isQuotaExceeded: ", session);
+			return session.ctx.call("v1.emails.mailboxs.isQuotaExceeded", {
+				address
+			});
 		},
 
 		/**
-		 * Store a message in the database
+		 * Store a message in the emails.store service
 		 * 
 		 * @param {Object} session Session object
 		 * @param {Object} message Message object
@@ -299,6 +325,18 @@ module.exports = {
 		 */
 		async storeMessage(session, message) {
 			this.logger.info("storeMessage: ", session);
+
+			// Store the message in the emails.store service
+			return session.ctx.call("v1.emails.store.create", {
+				state: "inbound",
+				subject: message.subject,
+				from: message.from.text,
+				to: message.to.text,
+				cc: message.cc.text,
+				html: message.html,
+				text: message.text,
+				attachments: message.attachments
+			});
 
 		},
 
@@ -381,10 +419,26 @@ module.exports = {
 			// Perform sender address validation
 			await this.isValidSender(address);
 
-			//
+			// Find the user by username
+			const user = await this.findUser(address);
+
+			// Check if the user exists
+			if (!user)
+				throw new Error('Invalid sender address');
+
+			// Check if the user is allowed to send messages
+			if (!user.canSend)
+				throw new Error('Sender not allowed');
+
+
 
 			// Store the sender address in the session
 			session.from = address;
+
+			// Store the user in the session
+			session.user = user;
+
+
 
 			return true;
 		},
@@ -435,7 +489,7 @@ module.exports = {
 			// Store the message data in the session
 			session.message = message;
 			// Store the message data in the database
-			await this.storeMessage(session);
+			await this.storeMessage(session, message);
 
 			return true;
 		},

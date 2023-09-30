@@ -150,6 +150,36 @@ module.exports = {
         },
 
         /**
+         * is Quota Exceeded
+         * 
+         * @actions
+         * @param {String} address - mailbox address
+         * 
+         * @returns {Object} mailbox
+         */
+        isQuotaExceeded: {
+            rest: {
+                method: "GET",
+                path: "/isQuotaExceeded/:address",
+            },
+            permissions: ['emails.mailboxs.isQuotaExceeded'],
+            params: {
+                address: { type: "string" }
+            },
+            async handler(ctx) {
+                const { address } = ctx.params;
+
+                const mailbox = await this.resolveMailbox(ctx, address);
+
+                if (mailbox.quota.size > mailbox.quota.count) {
+                    throw new MoleculerClientError("mailbox quota exceeded", 409);
+                }
+
+                return mailbox;
+            }
+        },
+
+        /**
          * checkPassword
          * 
          * @actions

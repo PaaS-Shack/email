@@ -161,7 +161,6 @@ module.exports = {
 	 */
 	actions: {
 
-
 	},
 
 	/**

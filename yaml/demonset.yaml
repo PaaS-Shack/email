@@ -16,13 +16,13 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: k8s.one-host.ca/roles-emails-outbound
+              - key: k8s.one-host.ca/roles-emails-inbound
                 operator: In
                 values:
                 - "true"
       containers:
       - name: emails-inbound
-        image: paas-shack/emails
+        image: ghcr.io/paas-shack/email:smtp-mta
         imagePullPolicy: Always
         env:
         - name: AGENT_HOST

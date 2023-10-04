@@ -767,6 +767,7 @@ module.exports = {
                 },
             });
             session.envelopeID = envelope.id;
+            this.logger.info(`created envelope id=${envelope.id}`);
         },
     },
 

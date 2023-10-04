@@ -60,7 +60,7 @@ module.exports = {
             from: {
                 type: 'string',
                 required: false,
-                empty: false,
+                default: null,
             },
 
             // envelope rcpt to
@@ -367,9 +367,12 @@ module.exports = {
                     },
 
                     onSecure: (socket, session, callback) => {
-                        console.log(session)
-                        this.logger.info(`SECURE sni=${session.servername} id=${session.id}`);
-                        callback();
+                        this.onSecure(socket, session, server).then(() => {
+                            callback();
+                        }).catch(err => {
+                            this.logger.error(err);
+                            callback(err);
+                        });
                     },
                 });
 
@@ -662,6 +665,11 @@ module.exports = {
          */
         async onClose(session, server) {
 
+
+            if (!session.envelopeID) {
+                await this.createEnvelope(session, server);
+            }
+
         },
 
         /**
@@ -674,6 +682,10 @@ module.exports = {
          */
         async onConnect(session, server) {
 
+
+            if (!session.envelopeID) {
+                await this.createEnvelope(session, server);
+            }
         },
 
         async handleMessage(stream, session, server) {
@@ -706,6 +718,24 @@ module.exports = {
                 id: envelope.id,
                 s3
             });
+        },
+
+        /**
+         * on secure
+         * 
+         * @param {Object} socket
+         * @param {Object} session
+         * @param {Object} server
+         * 
+         * @returns {Promise}
+         */
+        async onSecure(socket, session, server) {
+            this.logger.info(`SECURE id=${session.id}`);
+
+
+            if (!session.envelopeID) {
+                await this.createEnvelope(session, server);
+            }
         },
 
         /**

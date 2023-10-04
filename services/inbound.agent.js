@@ -665,7 +665,6 @@ module.exports = {
          */
         async onClose(session, server) {
 
-
             if (!session.envelopeID) {
                 await this.createEnvelope(session, server);
             }
@@ -718,6 +717,16 @@ module.exports = {
                 id: envelope.id,
                 s3
             });
+
+            envelope = await this.broker.call("v1.emails.inbound.get", {
+                id: session.envelopeID
+            });
+
+            // emit envelope received event
+            await this.broker.emit('emails.inbound.received', {
+                envelope
+            });
+
         },
 
         /**

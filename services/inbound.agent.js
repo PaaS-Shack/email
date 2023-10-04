@@ -13,6 +13,7 @@ const S3Mixin = require("../mixins/s3-store.mixin");
 
 const SMTPServer = require('smtp-server').SMTPServer;
 const fs = require('fs');
+const tls = require('tls');
 const os = require('os');
 const isemail = require('isemail');
 

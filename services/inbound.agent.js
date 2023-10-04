@@ -301,6 +301,7 @@ module.exports = {
                     ca,
                     cert,
                     secure: portNumber === 465,
+                    needsUpgrade: portNumber === 465 && !this.config["emails.inbound.secured"],
                     port: portNumber,
 
                     onMailFrom: (address, session, callback) => {

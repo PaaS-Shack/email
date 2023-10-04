@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: emails-inbound
+spec:
+  selector:
+    matchLabels:
+      app: emails-inbound
+  template:
+    metadata:
+      labels:
+        app: emails-inbound
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: k8s.one-host.ca/roles-emails-outbound
+                operator: In
+                values:
+                - "true"
+      containers:
+      - name: emails-inbound
+        image: paas-shack/emails
+        imagePullPolicy: Always
+        env:
+        - name: AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: AGENT_HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: AGENT_INTERFACE
+          value: eth0
+        - name: SERVICES
+          value: "services/**/inbound.service.js"
+        envFrom:
+          - configMapRef:
+              name: config
+          - secretRef:
+              name: secrets
+        ports:
+        - containerPort: 25
+          hostPort: 25
+          protocol: TCP
+          name: smtp-25
+        - containerPort: 587
+          hostPort: 587
+          protocol: TCP
+          name: smtp-587
+        - containerPort: 465
+          hostPort: 465
+          protocol: TCP
+          name: smtp-465

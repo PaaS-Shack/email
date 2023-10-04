@@ -282,7 +282,7 @@ module.exports = {
         async setup(ctx) {
 
             // resolve key and cert
-            const [key, ca, cert] = await this.resolveKeyCert(ctx);
+            const [key, ca, cert] = await this.resolveKeyCert(this.config["emails.inbound.hostname"]);
 
             // resolve server options
             const options = await this.resolveServerOptions(ctx);
@@ -473,23 +473,26 @@ module.exports = {
         /**
          * resolve key and cert from v1.certificates service
          * 
-         * @param {Context} ctx
+         * @param {String} hostname - hostname to resolve
          * 
-         * @returns {Promise}
+         * @returns {Promise} 
          */
-        async resolveKeyCert(ctx = this.broker) {
+        async resolveKeyCert(hostname) {
             // resolve key and cert
+
+            const ctx = new Context(this.broker);
+
             let result = await ctx.call("v1.certificates.resolveDomain", {
-                domain: this.config["emails.inbound.hostname"]
+                domain: hostname
             });
 
             // check result
             if (!result) {
                 await ctx.call("v1.certificates.letsencrypt.dns", {
-                    domain: this.config["emails.inbound.hostname"]
+                    domain: hostname
                 });
                 result = await ctx.call("v1.certificates.resolveDomain", {
-                    domain: this.config["emails.inbound.hostname"]
+                    domain: hostname
                 });
             }
             const { privkey, chain, cert } = result;
@@ -737,7 +740,7 @@ module.exports = {
                 return this.sniCache.get(servername);
             }
 
-            const [key, ca, cert] = await this.resolveKeyCert();
+            const [key, ca, cert] = await this.resolveKeyCert(servername);
 
             const context = tls.createSecureContext({
                 key,

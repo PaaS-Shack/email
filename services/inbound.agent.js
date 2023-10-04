@@ -737,7 +737,7 @@ module.exports = {
                 return this.sniCache.get(servername);
             }
 
-            const [key, ca, cert] = await this.resolveKeyCert(ctx);
+            const [key, ca, cert] = await this.resolveKeyCert();
 
             const context = tls.createSecureContext({
                 key,

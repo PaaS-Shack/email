@@ -36,7 +36,7 @@ spec:
         - name: AGENT_INTERFACE
           value: eth0
         - name: SERVICES
-          value: "services/**/inbound.service.js"
+          value: "services/**/inbound.agent.js"
         envFrom:
           - configMapRef:
               name: config

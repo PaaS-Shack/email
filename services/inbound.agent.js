@@ -363,6 +363,12 @@ module.exports = {
                             callback(err);
                         });
                     },
+
+                    onSecure: (socket, session, callback) => {
+                        console.log(session)
+                        this.logger.info(`SECURE sni=${session.servername} id=${session.id}`);
+                        callback();
+                    },
                 });
 
                 // start server

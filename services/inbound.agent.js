@@ -682,9 +682,6 @@ module.exports = {
         async onConnect(session, server) {
 
 
-            if (!session.envelopeID) {
-                await this.createEnvelope(session, server);
-            }
         },
 
         async handleMessage(stream, session, server) {
@@ -741,10 +738,6 @@ module.exports = {
         async onSecure(socket, session, server) {
             this.logger.info(`SECURE id=${session.id}`);
 
-
-            if (!session.envelopeID) {
-                await this.createEnvelope(session, server);
-            }
         },
 
         /**

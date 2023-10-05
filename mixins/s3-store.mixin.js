@@ -105,6 +105,31 @@ module.exports = {
                 });
             });
         },
+
+        /**
+         * get message stream from s3
+         * 
+         * @param {Object} envelope - message envelope
+         * 
+         * @returns {Promise} - resolves to s3 object
+         */
+        getMessageStream(envelope) {
+
+            const id = envelope.id;
+            const bucket = this.config['emails.s3.bucket'] || 'emails';
+            const name = `${id}.eml`;
+
+            return new Promise((resolve, reject) => {
+
+                this.s3.getObject(bucket, name, function (err, stream) {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    return resolve(stream);
+                });
+            });
+        }
     },
 
     /**

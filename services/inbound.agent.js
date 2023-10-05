@@ -119,94 +119,13 @@ module.exports = {
             // session client object
             session: {
                 type: 'object',
-                props: {
-                    // session id
-                    sessionID: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                    // local IP address for the connected client
-                    localAddress: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                    // local port number for the connected client
-                    localPort: {
-                        type: 'number',
-                        required: true,
-                    },
-                    // remote IP address for the connected client
-                    remoteAddress: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                    // remote port number for the connected client
-                    remotePort: {
-                        type: 'number',
-                        required: true,
-                    },
-                    // reverse resolved hostname for remoteAddress
-                    clientHostname: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                    // the opening SMTP command (HELO/EHLO/LHLO)
-                    openingCommand: {
-                        type: 'string',
-                        required: false,
-                    },
-                    // hostname the client provided with HELO/EHLO call
-                    hostNameAppearsAs: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                    // transmissionType
-                    transmissionType: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                }
+                required: false
             },
 
             // server object
             server: {
                 type: 'object',
-                props: {
-                    // server hostname
-                    hostName: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                    // server IP address
-                    address: {
-                        type: 'string',
-                        required: true,
-                        empty: false,
-                    },
-                    // server port number
-                    port: {
-                        type: 'number',
-                        required: true,
-                    },
-                    // server TLS enabled
-                    tls: {
-                        type: 'boolean',
-                        required: true,
-                    },
-                    // server authMethod
-                    authMethod: {
-                        type: 'string',
-                        required: false,
-                        default: null,
-                    },
-                }
+                required: false
             },
 
             ...DbService.FIELDS,// inject dbservice fields

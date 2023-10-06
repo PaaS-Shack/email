@@ -206,29 +206,8 @@ module.exports = {
                 if (!pool) {
                     throw new Error('no pool');
                 }
+                await this.sendPoolEmail(ctx, pool, message.to[0], message);
 
-                // resolve dkim
-                const dkim = await ctx.call('v1.certificates.resolveDKIM', {
-                    domain: message.from.split('@')[1],
-                });
-
-                // send email
-                const info = await pool.sendMail({
-                    ...message,
-                    dkim: {
-                        domainName: this.config['emails.outbound.dkim.domainName'],
-                        keySelector: this.config['emails.outbound.dkim.keySelector'],
-                        privateKey: dkim.privkey,
-                    }
-                });
-
-                // update message status and info
-                await ctx.call('v1.emails.messages.update', {
-                    id: message.id,
-                    state: info.accepted.length > 0 ? 'delivered' : info.rejected.length > 0 ? 'rejected' : 'failed',
-                    ...info
-                });
-                console.log(info)
             },
         },
     },
@@ -237,6 +216,40 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * send pool email
+         * 
+         * @param {Object} ctx - context
+         * @param {Object} pool - pool object
+         * @param {String} to - to email address
+         * @param {Object} message - message object
+         */
+        async sendPoolEmail(ctx, pool, to, message) {
+            // resolve dkim
+            const dkim = await ctx.call('v1.certificates.resolveDKIM', {
+                domain: message.from.split('@')[1],
+            });
+
+            // send email
+            const info = await pool.sendMail({
+                ...message,
+                to,
+                dkim: {
+                    domainName: this.config['emails.outbound.dkim.domainName'],
+                    keySelector: this.config['emails.outbound.dkim.keySelector'],
+                    privateKey: dkim.privkey,
+                }
+            });
+
+            console.log(info)
+
+            // update message status and info
+            return ctx.call('v1.emails.messages.update', {
+                id: message.id,
+                state: info.accepted.length > 0 ? 'delivered' : info.rejected.length > 0 ? 'rejected' : 'failed',
+                ...info
+            });
+        },
         /**
          * send email
          * 

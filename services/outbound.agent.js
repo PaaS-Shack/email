@@ -393,7 +393,7 @@ module.exports = {
 
             // get mx record
             const mxRecord = mxRecords.sort((a, b) => {
-                return a.priority - b.priority;
+                return b.priority - a.priority;
             })[0];
 
             // get mx record host

@@ -303,13 +303,11 @@ module.exports = {
          * @returns {Object} transport - transport object
          */
         async createTransport(ctx, mxHost, port, secure, starttls) {
-            // create transport
-            let transport = null;
 
             this.logger.info(`createTransport ${mxHost} ${port} ${secure} ${starttls}`);
 
             // create transport
-            transport = nodemailer.createTransport({
+            const transport = nodemailer.createTransport({
                 host: mxHost,
                 port,
                 secure, // use TLS
@@ -318,6 +316,21 @@ module.exports = {
                     // do not fail on invalid certs
                     rejectUnauthorized: false
                 }
+            });
+            
+            //watch error
+            transport.on('error', err => {
+                this.logger.error(`createTransport ${mxHost} ${port} ${err.message}`);
+            });
+
+            // watch idle
+            transport.on('idle', () => {
+                this.logger.info(`createTransport ${mxHost} ${port} idle`);
+            });
+
+            // watch close
+            transport.on('close', () => {
+                this.logger.info(`createTransport ${mxHost} ${port} close`);
             });
             return new Promise(async (resolve, reject) => {
                 transport.on('error', reject)

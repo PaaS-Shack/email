@@ -384,7 +384,10 @@ module.exports = {
             this.logger.info(`getPool MX ${to}`);
 
             // resolve mx records
-            const mxRecords = await dns.resolve(fqdn, 'MX')
+            const mxRecords = await ctx.call('v1.resolver.resolve', {
+                fqdn: fqdn,
+                type: 'MX'
+            });
 
             // check mx records
             if (!mxRecords || mxRecords.length === 0) {
@@ -394,7 +397,7 @@ module.exports = {
             // get mx record
             const mxRecord = mxRecords.sort((a, b) => {
                 return b.priority - a.priority;
-            })[0];
+            }).shift();
 
             // get mx record host
             const mxHost = mxRecord.exchange;

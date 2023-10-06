@@ -144,6 +144,31 @@ module.exports = {
             },
         },
 
+        /**
+         * create transport pool
+         * 
+         * @actions
+         * @param {String} mxHost - mx host
+         * 
+         * @returns {Object} pool - pool object
+         */
+        createPool: {
+            params: {
+                mxHost: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { mxHost } = ctx.params;
+
+                const pool = await this.createPool(ctx, mxHost);
+
+                return pool;
+
+            }
+        },
+
         // clean db
         clean: {
             async handler(ctx) {

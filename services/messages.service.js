@@ -251,53 +251,14 @@ module.exports = {
                 default: false,
             },
 
-            // array of accepted email address
-            accepted: {
+            // message info reponces
+            info: {
                 type: "array",
                 required: false,
                 default: [],
-                items: "string",
+                items: "object",
             },
 
-            // array of rejected email address
-            rejected: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
-            },
-
-            // recived ehlo
-            ehlo: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
-            },
-
-            envelopeTime: {
-                type: "number",
-                required: false,
-                default: null,
-            },
-
-            messageTime: {
-                type: "number",
-                required: false,
-                default: null,
-            },
-
-            messageSize: {
-                type: "number",
-                required: false,
-                default: null,
-            },
-
-            response: {
-                type: "string",
-                required: false,
-                default: null,
-            },
 
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -488,7 +449,47 @@ module.exports = {
                     state: "queued"
                 });
 
-                ctx.emit('emails.messages.queued', message);
+                ctx.emit('emails.messages.queued', {
+                    id: message.id,
+                });
+
+                return message;
+            }
+        },
+
+        /**
+         * add message info
+         * 
+         * @actions
+         * @param {String} id - message id
+         * @param {Object} info - message info
+         * 
+         * @returns {Object} - message
+         */
+        addInfo: {
+            params: {
+                id: { type: "string" },
+                info: { type: "object" },
+            },
+            async handler(ctx) {
+                const params = Object.assign({}, ctx.params);
+                const id = params.id;
+                const info = params.info;
+
+                let message = await this.resolveEntities(null, {
+                    id,
+                });
+
+                // check if message exists
+                if (!message) {
+                    throw new MoleculerClientError("message not found", 404);
+                }
+
+                // update message state raw update
+                message = await this.updateEntity(ctx, {
+                    id,
+                    info: [...message.info, info],
+                });
 
                 return message;
             }

@@ -209,7 +209,7 @@ module.exports = {
 
             const port = [
                 25,
-                465,
+                //465,
                 587,
             ]
             for (let index = 0; index < port.length; index++) {
@@ -259,7 +259,7 @@ module.exports = {
                     onData: (stream, session, callback) => {
                         this.logger.info(`DATA id=${session.id}`);
                         this.onData(stream, session, server).then(() => {
-                            callback();
+                            callback(null, `250 OK: message queued id=${session.id}`);
                         }).catch(err => {
                             this.logger.error(err);
                             callback(err);

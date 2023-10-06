@@ -197,7 +197,15 @@ module.exports = {
          */
         "emails.messages.queued": {
             async handler(ctx) {
-                const message = ctx.params;
+                const id = ctx.params.id;
+
+                const message = await ctx.call('v1.emails.messages.get', {
+                    id,
+                });
+
+                if (!message) {
+                    throw new Error('no message');
+                }
 
                 this.logger.info(`queued ${message.id} now sending`);
 
@@ -207,14 +215,25 @@ module.exports = {
                     throw new Error('no pool');
                 }
 
-                for (let index = 0; index < message.to.length; index++) {
-                    const to = message.to[index];
+                // group by to by mx host
+                const tos = message.to.reduce((acc, to) => {
+                    const fqdn = to.split('@')[1];
+                    if (!acc[fqdn]) {
+                        acc[fqdn] = [];
+                    }
+                    acc[fqdn].push(to);
+                    return acc;
+                }, {});
 
+                // loop tos
+                for (const [fqdn, to] of Object.entries(tos)) {
+                    // send email
                     await this.sendPoolEmail(ctx, pool, to, message)
                         .then(email => {
-                            this.logger.info(`sent ${email.id} ${email.accepted.length} ${email.rejected.length}`);
-                        }).catch(err => {
-                            this.logger.error(`sendPoolEmail ${err.message}`);
+                            this.logger.info(`sendPoolEmail ${fqdn} ${email.id} ${email.state}`);
+                        })
+                        .catch(err => {
+                            this.logger.error(`sendPoolEmail ${fqdn} ${err.message}`);
                         });
                 }
 
@@ -252,12 +271,18 @@ module.exports = {
             });
 
             console.log(info)
+            // set info date
+            info.date = Date.now();
+            // set info host
+            info.host = this.config["emails.outbound.hostname"];
+            // set pool mx
+            info.mx = pool.options.host;
+
 
             // update message status and info
-            return ctx.call('v1.emails.messages.update', {
+            return ctx.call('v1.emails.messages.addInfo', {
                 id: message.id,
-                state: info.accepted.length > 0 ? 'delivered' : info.rejected.length > 0 ? 'rejected' : 'failed',
-                ...info
+                info
             });
         },
         /**
@@ -623,9 +648,11 @@ module.exports = {
             // loop pools
             for (const [key, pool] of this.pools) {
                 // close pool
-                await pool.close().catch(err => {
-                    this.logger.error(`closePool ${key} ${err.message}`);
-                });
+                try {
+                    pool.close()
+                } catch (err) {
+                    this.logger.error(`closePools ${err.message}`)
+                }
             }
         }
 

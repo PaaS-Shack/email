@@ -276,7 +276,7 @@ module.exports = {
                 const port = ports[index];
 
                 // create pool
-                await this.createTransport(ctx, mxHost, port, true, false)
+                await this.createTransport(ctx, mxHost, port, port == 465, port != 465)
                     .then(transport => {
                         pool = transport;
                         this.logger.info(`createPool ${mxHost} ${port} success`);
@@ -311,6 +311,7 @@ module.exports = {
                 host: mxHost,
                 port,
                 secure, // use TLS
+                name: this.config["emails.outbound.hostname"],
                 tls: {
                     // do not fail on invalid certs
                     rejectUnauthorized: false
@@ -365,7 +366,7 @@ module.exports = {
             })[0];
 
             // get mx record host
-           const mxHost = mxRecord.exchange;
+            const mxHost = mxRecord.exchange;
 
             this.logger.info(`getPool exchange ${to} ${mxHost}`);
 

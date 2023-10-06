@@ -209,9 +209,12 @@ module.exports = {
                 headers,
             } = await this.parseStream(stream);
 
+            if(!headers.get('dkim-signature')[0]){
+                throw new MoleculerClientError("DKIM signature not found", 400, "DKIM_SIGNATURE_NOT_FOUND");
+            }
 
             // parse dkim signature
-            const signatureObject = await this.parseSignature(headers.get('dkim-signature')[0]);
+            const signatureObject = await this.parseSignature(headers.get('dkim-signature'));
 
             const dkimDomain = signatureObject.d;
             const dkimSelector = signatureObject.s;
@@ -330,6 +333,7 @@ module.exports = {
          * @returns {Promise} - resolves to parsed signature
          */
         async parseSignature(signature) {
+            console.log(signature)
             const signatureStringArray = signature.split(';')
             const parsedSignature = {};
             // parse dkim signature

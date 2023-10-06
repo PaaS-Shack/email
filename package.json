@@ -45,6 +45,7 @@
     "smtp-server": "^3.13.0",
     "ssh-key-to-pem": "^0.11.1",
     "wild-config": "^1.7.0",
+    "wildduck": "^1.40.8",
     "zone-mta": "^3.6.10"
   },
   "engines": {

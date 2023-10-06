@@ -346,7 +346,7 @@ module.exports = {
                 return pool;
             }
 
-            this.logger.info(`getPool ${to}`);
+            this.logger.info(`getPool MX ${to}`);
 
             // resolve mx records
             const mxRecords = await ctx.call('v1.resolver.resolve', {
@@ -360,10 +360,14 @@ module.exports = {
             }
 
             // get mx record
-            const mxRecord = mxRecords[0];
+            const mxRecord = mxRecords.sort((a, b) => {
+                return a.priority - b.priority;
+            })[0];
 
             // get mx record host
-            mxHost = mxRecord.exchange;
+           const mxHost = mxRecord.exchange;
+
+            this.logger.info(`getPool exchange ${to} ${mxHost}`);
 
             // check pool
             if (!pool) {

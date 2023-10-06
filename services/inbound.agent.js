@@ -295,6 +295,10 @@ module.exports = {
                     },
                 });
 
+                server.on('error', err => {
+                    this.logger.error(err);
+                });
+
                 // start server
                 await new Promise((resolve, reject) => {
                     server.listen(portNumber, (err) => {
@@ -419,6 +423,11 @@ module.exports = {
                     domain: hostname
                 });
             }
+
+            if (!result) {
+                throw new Error('failed to resolve key and cert');
+            }
+
             const { privkey, chain, cert } = result;
 
             // return key and cert

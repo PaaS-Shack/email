@@ -4,6 +4,7 @@ const ConfigLoader = require("config-mixin");
 const { MoleculerClientError } = require("moleculer").Errors;
 
 const nodemailer = require("nodemailer");
+const SMTPServer = require('smtp-server').SMTPServer;
 
 /**
  * this is a outbound email service
@@ -166,7 +167,39 @@ module.exports = {
      * service events
      */
     events: {
+        /**
+         * emails.messages.queued event handler
+         */
+        "emails.messages.queued": {
+            async handler(ctx) {
+                const message = ctx.params;
 
+                const pool = await this.getPool(ctx, message.to[0]);
+
+                // resolve dkim
+                const dkim = await ctx.call('v1.certificates.resolveDKIM', {
+                    domain: message.from.split('@')[1],
+                });
+
+                // send email
+                const info = await pool.sendMail({
+                    ...message,
+                    dkim: {
+                        domainName: this.config['emails.outbound.dkim.domainName'],
+                        keySelector: this.config['emails.outbound.dkim.keySelector'],
+                        privateKey: dkim.privkey,
+                    }
+                });
+
+                // update message status and info
+                await ctx.call('v1.emails.messages.update', {
+                    id: message.id,
+                    state: info.accepted.length > 0 ? 'delivered' : info.rejected.length > 0 ? 'rejected' : 'failed',
+                    ...info
+                });
+                console.log(info)
+            },
+        },
     },
 
     /**
@@ -184,41 +217,12 @@ module.exports = {
         async sendEmail(ctx, params) {
             const { to, from, subject, text } = params;
 
-            // resolve mx records
-            const mxRecords = await ctx.call('v1.resolver.resolve', {
-                fqdn: to.split('@')[1],
-                type: 'MX'
-            });
-
-            // check mx records
-            if (!mxRecords || mxRecords.length === 0) {
-                throw new MoleculerClientError("no mx records found", 404);
-            }
-
-            // get mx record
-            const mxRecord = mxRecords[0];
-
-            // get mx record host
-            const mxHost = mxRecord.exchange;
-
-            // get pool
-            let pool = this.pools.get(mxHost);
-
-            // check pool
-            if (!pool) {
-                // create pool
-                pool = await this.createPool(ctx, mxHost);
-
-                // set pool
-                this.pools.set(mxHost, pool);
-            }
+            const pool = await this.getPool(ctx, to);
 
             // resolve dkim
             const dkim = await ctx.call('v1.certificates.resolveDKIM', {
                 domain: from.split('@')[1],
-
-            })
-
+            });
 
             // send email
             const info = await pool.sendMail({
@@ -310,7 +314,227 @@ module.exports = {
             await transport.verify();
 
             return transport;
-        }
+        },
+
+        /**
+         * get pool
+         * 
+         * @param {Object} ctx - context
+         * @param {String} to - to email address
+         * 
+         * @returns {Object} pool - pool object
+         */
+        async getPool(ctx, to) {
+
+            // resolve mx records
+            const mxRecords = await ctx.call('v1.resolver.resolve', {
+                fqdn: to.split('@')[1],
+                type: 'MX'
+            });
+
+            // check mx records
+            if (!mxRecords || mxRecords.length === 0) {
+                throw new MoleculerClientError("no mx records found", 404);
+            }
+
+            // get mx record
+            const mxRecord = mxRecords[0];
+
+            // get mx record host
+            const mxHost = mxRecord.exchange;
+
+            // get pool
+            let pool = this.pools.get(mxHost);
+
+            // check pool
+            if (!pool) {
+                // create pool
+                pool = await this.createPool(ctx, mxHost);
+
+                // set pool
+                this.pools.set(mxHost, pool);
+            }
+
+            return pool;
+        },
+
+        /**
+         * create outbound smtp server
+         * 
+         * @param {Object} ctx - context
+         * @param {Object} params - params
+         * 
+         * @returns {Object} server - server object
+         */
+        async createServer(ctx) {
+
+            const portNumber = 465;
+
+            // resolve key and cert
+            const [key, ca, cert] = await this.resolveKeyCert(this.config["emails.outbound.hostname"]);
+
+            // resolve server options
+            const options = await this.resolveServerOptions(ctx);
+
+            const server = new SMTPServer({
+                logger: false,
+
+                name: this.config["emails.outbound.hostname"],
+
+                banner: 'Welcome to ' + this.name,
+
+                size: this.config["emails.outbound.maxSize"],
+
+                // No authentication at this point
+                disabledCommands: [],
+
+                // Socket timeout is set to 10 minutes. This is needed to give enought time
+                // for the server to process large recipients lists
+                socketTimeout: this.config["emails.outbound.socketTimeout"] || 10 * 60 * 1000,
+
+                key,
+                ca,
+                cert,
+
+                secure: true,
+                needsUpgrade: true,
+                port: portNumber,
+
+                SNICallback: (servername, callback) => {
+                    this.logger.info(`SNI id=${servername}`);
+                    this.SNICallback(servername).then(context => {
+                        callback(null, context);
+                    }).catch(err => {
+                        callback(err);
+                    });
+                },
+
+                onAuth: (auth, session, callback) => {
+                    this.logger.info(`AUTH ${auth.method} id=${session.id}`);
+                    this.onAuth(auth, session).then(user => {
+                        callback(null, { user });
+                    }).catch(err => {
+                        callback(err);
+                    });
+                },
+                onMailFrom: (address, session, callback) => {
+                    this.logger.info(`MAIL FROM:<${address.address}> id=${session.id}`);
+
+                },
+
+                onRcptTo: (address, session, callback) => {
+                    this.logger.info(`RCPT TO:<${address.address}> id=${session.id}`);
+
+                },
+
+                onAuth: (auth, session, callback) => {
+                    this.logger.info(`AUTH ${auth.method} id=${session.id}`);
+
+                },
+
+                onData: (stream, session, callback) => {
+                    this.logger.info(`DATA id=${session.id}`);
+
+                },
+
+                onClose: (session) => {
+                    this.logger.info(`CLOSE id=${session.id}`);
+
+                },
+
+                onConnect: (session, callback) => {
+                    this.logger.info(`CONNECT id=${session.id}`);
+
+                },
+
+                onSecure: (socket, session, callback) => {
+
+                },
+            });
+
+            this.server = server;
+
+            // start server
+            await new Promise((resolve, reject) => {
+                server.listen(portNumber, (err) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+
+        },
+
+        /**
+         * resolve key and cert from v1.certificates service
+         * 
+         * @param {String} hostname - hostname to resolve
+         * 
+         * @returns {Promise} 
+         */
+        async resolveKeyCert(hostname) {
+            // resolve key and cert
+
+            const ctx = new Context(this.broker);
+
+            let result = await ctx.call("v1.certificates.resolveDomain", {
+                domain: hostname
+            });
+
+            // check result
+            if (!result) {
+                await ctx.call("v1.certificates.letsencrypt.dns", {
+                    domain: hostname
+                });
+                result = await ctx.call("v1.certificates.resolveDomain", {
+                    domain: hostname
+                });
+            }
+            const { privkey, chain, cert } = result;
+
+            // return key and cert
+            return [privkey, chain, cert];
+        },
+        /**
+                 * on auth
+                 * 
+                 * @param {Object} auth
+                 * @param {Object} session
+                 * 
+                 * @returns {Promise}
+                 */
+        async onAuth(auth, session) {
+            if (this.closing) {
+                throw new Error('Server shutdown in progress');
+            }
+
+            if (
+                // username is always required
+                !auth.username ||
+                // password is required unless it is XCLIENT
+                (!auth.password && auth.method !== 'XCLIENT') ||
+                auth.username.length > 1024 ||
+                (auth.password && auth.password.length > 1024)
+            ) {
+                throw new Error('Invalid username or password');
+            }
+
+            let user = await this.broker.call("v1.emails.accounts.auth", {
+                method: auth.method,
+                username: auth.username,
+                password: auth.password,
+            });
+
+            if (!user) {
+                throw new Error('Invalid username or password');
+            }
+
+            session.user = user.address;
+
+            return user;
+        },
 
     },
 

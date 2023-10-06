@@ -16,6 +16,8 @@ const { MoleculerClientError } = require("moleculer").Errors;
  */
 
 const Minio = require("minio");
+const crypto = require('crypto');
+const { createWriteStream, createReadStream } = require('fs');
 
 /**
  * maildrop mixin
@@ -129,7 +131,33 @@ module.exports = {
                     return resolve(stream);
                 });
             });
-        }
+        },
+
+        /**
+         * write stream to tmp file
+         * 
+         * @param {Stream} stream - stream to write
+         * 
+         * @returns {Promise} - resolves to tmp file path
+         */
+        async writeStreamToTmpFile(stream) {
+            // create tmp file
+            const tmpFile = `/tmp/${crypto.randomBytes(16).toString('hex')}.eml`;
+
+            const writeStream = createWriteStream(tmpFile);
+
+            // write stream to tmp file
+            stream.pipe(writeStream);
+
+            // wait for stream to finish
+            await new Promise((resolve, reject) => {
+                stream.on('end', resolve);
+                stream.on('error', reject);
+            });
+
+            // return tmp file path
+            return tmpFile;
+        },
     },
 
     /**

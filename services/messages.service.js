@@ -255,7 +255,7 @@ module.exports = {
             accepted: {
                 type: "array",
                 required: false,
-                default: null,
+                default: [],
                 items: "string",
             },
 
@@ -263,7 +263,7 @@ module.exports = {
             rejected: {
                 type: "array",
                 required: false,
-                default: null,
+                default: [],
                 items: "string",
             },
 
@@ -271,7 +271,7 @@ module.exports = {
             ehlo: {
                 type: "array",
                 required: false,
-                default: null,
+                default: [],
                 items: "string",
             },
 

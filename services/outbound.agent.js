@@ -174,7 +174,13 @@ module.exports = {
             async handler(ctx) {
                 const message = ctx.params;
 
+                this.logger.info(`queued ${message.id} now sending`);
+
                 const pool = await this.getPool(ctx, message.to[0]);
+
+                if (!pool) {
+                    throw new Error('no pool');
+                }
 
                 // resolve dkim
                 const dkim = await ctx.call('v1.certificates.resolveDKIM', {
@@ -273,8 +279,9 @@ module.exports = {
                 await this.createTransport(ctx, mxHost, port, true, false)
                     .then(transport => {
                         pool = transport;
+                        this.logger.info(`createPool ${mxHost} ${port} success`);
                     }).catch(err => {
-                        this.logger.error(err);
+                        this.logger.error(`createPool ${mxHost} ${port} ${err.message}`);
                     });
                 if (pool) {
                     break;
@@ -309,11 +316,15 @@ module.exports = {
                     rejectUnauthorized: false
                 }
             });
-
-            // test transport
-            await transport.verify();
-
-            return transport;
+            return new Promise(async (resolve, reject) => {
+                transport.on('error', reject)
+                // test transport
+                await transport.verify();
+                // remove error handler
+                transport.removeListener('error', reject);
+                // resolve transport
+                return transport;
+            });
         },
 
         /**
@@ -325,6 +336,15 @@ module.exports = {
          * @returns {Object} pool - pool object
          */
         async getPool(ctx, to) {
+
+            // get pool
+            let pool = this.pools.get(mxHost);
+
+            if(pool){
+                return pool;
+            }
+
+            this.logger.info(`getPool ${to}`);
 
             // resolve mx records
             const mxRecords = await ctx.call('v1.resolver.resolve', {
@@ -342,9 +362,6 @@ module.exports = {
 
             // get mx record host
             const mxHost = mxRecord.exchange;
-
-            // get pool
-            let pool = this.pools.get(mxHost);
 
             // check pool
             if (!pool) {

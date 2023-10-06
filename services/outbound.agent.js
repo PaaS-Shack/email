@@ -269,7 +269,7 @@ module.exports = {
             let pool = null;
             // try 465, 587, 25
 
-            const ports = [465, 587, 25];
+            const ports = [587, 465, 25];
 
             // loop ports
             for (let index = 0; index < ports.length; index++) {
@@ -317,7 +317,7 @@ module.exports = {
                     rejectUnauthorized: false
                 }
             });
-            
+
             //watch error
             transport.on('error', err => {
                 this.logger.error(`createTransport ${mxHost} ${port} ${err.message}`);

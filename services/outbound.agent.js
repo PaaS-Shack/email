@@ -337,10 +337,12 @@ module.exports = {
          */
         async getPool(ctx, to) {
 
-            // get pool
-            let pool = this.pools.get(mxHost);
+            const fqdn = to.split('@')[1];
 
-            if(pool){
+            // get pool
+            let pool = this.pools.get(fqdn);
+
+            if (pool) {
                 return pool;
             }
 
@@ -348,7 +350,7 @@ module.exports = {
 
             // resolve mx records
             const mxRecords = await ctx.call('v1.resolver.resolve', {
-                fqdn: to.split('@')[1],
+                fqdn: fqdn,
                 type: 'MX'
             });
 
@@ -361,7 +363,7 @@ module.exports = {
             const mxRecord = mxRecords[0];
 
             // get mx record host
-            const mxHost = mxRecord.exchange;
+            mxHost = mxRecord.exchange;
 
             // check pool
             if (!pool) {
@@ -369,7 +371,7 @@ module.exports = {
                 pool = await this.createPool(ctx, mxHost);
 
                 // set pool
-                this.pools.set(mxHost, pool);
+                this.pools.set(fqdn, pool);
             }
 
             return pool;

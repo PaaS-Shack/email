@@ -333,14 +333,11 @@ module.exports = {
 
             // create transport
             const transport = nodemailer.createTransport({
+                pool: true,
                 host: mxHost,
                 port,
                 secure, // use TLS
                 name: this.config["emails.outbound.hostname"],
-                tls: {
-                    // do not fail on invalid certs
-                    rejectUnauthorized: false
-                }
             });
 
             //watch error
@@ -348,10 +345,6 @@ module.exports = {
                 this.logger.error(`createTransport ${mxHost} ${port} ${err.message}`);
             });
 
-            // watch idle
-            transport.on('idle', () => {
-                this.logger.info(`createTransport ${mxHost} ${port} idle`);
-            });
 
             // watch close
             transport.on('close', () => {
@@ -359,12 +352,13 @@ module.exports = {
             });
             return new Promise(async (resolve, reject) => {
                 transport.on('error', reject)
-                // test transport
-                await transport.verify();
-                // remove error handler
-                transport.removeListener('error', reject);
-                // resolve transport
-                return transport;
+
+                transport.once('idle', () => {
+                    resolve(transport)
+                    // remove error handler
+                    transport.removeListener('error', reject);
+
+                });
             });
         },
 
@@ -390,10 +384,7 @@ module.exports = {
             this.logger.info(`getPool MX ${to}`);
 
             // resolve mx records
-            const mxRecords = await ctx.call('v1.resolver.resolve', {
-                fqdn: fqdn,
-                type: 'MX'
-            });
+            const mxRecords = await dns.resolve(fqdn, 'MX')
 
             // check mx records
             if (!mxRecords || mxRecords.length === 0) {
@@ -599,6 +590,18 @@ module.exports = {
 
             return user;
         },
+        /**
+         * close pools
+         */
+        async closePools() {
+            // loop pools
+            for (const [key, pool] of this.pools) {
+                // close pool
+                await pool.close().catch(err => {
+                    this.logger.error(`closePool ${key} ${err.message}`);
+                });
+            }
+        }
 
     },
 
@@ -608,8 +611,10 @@ module.exports = {
 
     async started() { },
 
-    async stopped() { },
+    async stopped() {
+        return this.closePools();
+    },
 
-}
+};
 
 

@@ -206,7 +206,17 @@ module.exports = {
                 if (!pool) {
                     throw new Error('no pool');
                 }
-                await this.sendPoolEmail(ctx, pool, message.to[0], message);
+
+                for (let index = 0; index < message.to.length; index++) {
+                    const to = message.to[index];
+
+                    await this.sendPoolEmail(ctx, pool, to, message)
+                        .then(email => {
+                            this.logger.info(`sent ${email.id} ${email.info.accepted.length} ${email.info.rejected.length}`);
+                        }).catch(err => {
+                            this.logger.error(`sendPoolEmail ${err.message}`);
+                        });
+                }
 
             },
         },

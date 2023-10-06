@@ -269,7 +269,7 @@ module.exports = {
             let pool = null;
             // try 465, 587, 25
 
-            const ports = [587, 465, 25];
+            const ports = [25, 587, 465];
 
             // loop ports
             for (let index = 0; index < ports.length; index++) {

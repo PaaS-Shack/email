@@ -306,6 +306,8 @@ module.exports = {
             // create transport
             let transport = null;
 
+            this.logger.info(`createTransport ${mxHost} ${port} ${secure} ${starttls}`);
+
             // create transport
             transport = nodemailer.createTransport({
                 host: mxHost,

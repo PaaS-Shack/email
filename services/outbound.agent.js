@@ -212,7 +212,7 @@ module.exports = {
 
                     await this.sendPoolEmail(ctx, pool, to, message)
                         .then(email => {
-                            this.logger.info(`sent ${email.id} ${email.info.accepted.length} ${email.info.rejected.length}`);
+                            this.logger.info(`sent ${email.id} ${email.accepted.length} ${email.rejected.length}`);
                         }).catch(err => {
                             this.logger.error(`sendPoolEmail ${err.message}`);
                         });

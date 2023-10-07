@@ -53,6 +53,12 @@ module.exports = {
                 required: true,
             },
 
+            // mailbox address
+            address: {
+                type: "string",
+                required: true,
+            },
+
             // email mailbox messages
             messages: {
                 type: "array",
@@ -63,6 +69,22 @@ module.exports = {
                     action: "v1.emails.messages.resolve",
                 }
             },
+
+            // mailbox is alias
+            isAlias: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // mailbox alias 
+            alias: {
+                type: "string",
+                required: false,
+                default: null,
+            },
+
+            
 
 
             ...DbService.FIELDS,// inject dbservice fields

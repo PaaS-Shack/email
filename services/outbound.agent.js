@@ -47,34 +47,30 @@ module.exports = {
 
         fields: {
 
-            // to email address
-            to: {
-                type: "string",
-                required: true,
-            },
-
-            // from email address
-            from: {
-                type: "string",
-                required: true,
-            },
-
-            // email subject
-            subject: {
-                type: "string",
-                required: true,
-            },
-
-            // email text
-            text: {
-                type: "string",
-                required: true,
-            },
-
-            // email info
-            info: {
-                type: "object",
-                required: true,
+            // envelope s3 object
+            s3: {
+                type: 'object',
+                props: {
+                    // bucket
+                    bucket: {
+                        type: 'string',
+                        required: true,
+                        empty: false,
+                    },
+                    // object name
+                    name: {
+                        type: 'string',
+                        required: true,
+                        empty: false,
+                    },
+                    // etag
+                    etag: {
+                        type: 'string',
+                        required: true,
+                        empty: false,
+                    },
+                },
+                required: false,
             },
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -166,6 +162,30 @@ module.exports = {
 
                 return pool;
 
+            }
+        },
+
+        /**
+         * validate to address
+         * 
+         * @actions
+         * @param {String} to - to email address
+         * 
+         * @returns {Object} result - result object
+         */
+        validateTo: {
+            params: {
+                to: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { to } = ctx.params;
+
+                const result = await this.validateTo(ctx, to);
+
+                return result;
             }
         },
 
@@ -517,44 +537,55 @@ module.exports = {
 
                 onAuth: (auth, session, callback) => {
                     this.logger.info(`AUTH ${auth.method} id=${session.id}`);
-                    this.onAuth(auth, session).then(user => {
+                    this.onAuth(auth, session).then(async (user) => {
+                        this.logger.info(`AUTH ${auth.method} id=${session.id} success`);
+                        if (!session.envelopeID) {
+                            await this.createEnvelope(session);
+                        }
                         callback(null, { user });
                     }).catch(err => {
+                        this.logger.info(`AUTH ${auth.method} id=${session.id} ${err.message}`);
                         callback(err);
                     });
                 },
                 onMailFrom: (address, session, callback) => {
                     this.logger.info(`MAIL FROM:<${address.address}> id=${session.id}`);
+                    this.validateFrom(this.broker, address.address, session.user.id).then(result => {
+                        this.logger.info(`MAIL FROM:<${address.address}> id=${session.id} success`);
+                        callback(null, result);
+                    }).catch(err => {
+                        this.logger.info(`MAIL FROM:<${address.address}> id=${session.id} ${err.message}`);
+                        callback(null, err.message);
+                    })
 
                 },
 
                 onRcptTo: (address, session, callback) => {
                     this.logger.info(`RCPT TO:<${address.address}> id=${session.id}`);
-
-                },
-
-                onAuth: (auth, session, callback) => {
-                    this.logger.info(`AUTH ${auth.method} id=${session.id}`);
-
+                    this.validateTo(this.broker, address.address, session.user.id).then(result => {
+                        this.logger.info(`RCPT TO:<${address.address}> id=${session.id} success`);
+                        callback(null, result);
+                    }).catch(err => {
+                        this.logger.info(`RCPT TO:<${address.address}> id=${session.id} ${err.message}`);
+                        callback(null, err.message);
+                    });
                 },
 
                 onData: (stream, session, callback) => {
                     this.logger.info(`DATA id=${session.id}`);
+                    this.storeMessage(this.broker, session, stream).then(result => {
+                        this.logger.info(`DATA id=${session.id} success`);
 
-                },
+                        // send message queued event
+                        this.broker.emit('emails.outbound.queued', {
+                            id: session.envelopeID,
+                        });
 
-                onClose: (session) => {
-                    this.logger.info(`CLOSE id=${session.id}`);
-
-                },
-
-                onConnect: (session, callback) => {
-                    this.logger.info(`CONNECT id=${session.id}`);
-
-                },
-
-                onSecure: (socket, session, callback) => {
-
+                        callback(null, result);
+                    }).catch(err => {
+                        this.logger.info(`DATA id=${session.id} ${err.message}`);
+                        callback(null, err.message);
+                    });
                 },
             });
 
@@ -604,13 +635,13 @@ module.exports = {
             return [privkey, chain, cert];
         },
         /**
-                 * on auth
-                 * 
-                 * @param {Object} auth
-                 * @param {Object} session
-                 * 
-                 * @returns {Promise}
-                 */
+         * on auth
+         * 
+         * @param {Object} auth
+         * @param {Object} session
+         * 
+         * @returns {Promise}
+         */
         async onAuth(auth, session) {
             if (this.closing) {
                 throw new Error('Server shutdown in progress');
@@ -637,9 +668,89 @@ module.exports = {
                 throw new Error('Invalid username or password');
             }
 
-            session.user = user.address;
+            session.user = user;
 
             return user;
+        },
+
+        /**
+         * validate from address
+         * 
+         * @param {Object} ctx - context
+         * @param {String} from - from email address
+         * @param {String} user - user id
+         * 
+         * @returns {Promise} 
+         */
+        async validateFrom(ctx, from, user) {
+            // validate from address
+            const result = await ctx.call("v1.emails.accounts.validateFrom", {
+                from,
+                user,
+            });
+
+            return result;
+        },
+
+        /**
+         * validate to address
+         * 
+         * @param {Object} ctx - context
+         * @param {String} to - to email address
+         * @param {String} user - user id
+         * 
+         * @returns {Promise}
+         */
+        async validateTo(ctx, to) {
+
+            const fqdn = to.split('@')[1];
+
+            // resolve mx records
+            const mxRecords = await ctx.call('v1.resolver.resolve', {
+                fqdn: fqdn,
+                type: 'MX'
+            });
+
+            // check mx records
+            if (!mxRecords || mxRecords.length === 0) {
+                throw new MoleculerClientError("no mx records found", 404);
+            }
+
+            return true;
+        },
+
+        /**
+         * store email message stream in S3
+         * 
+         * @param {Object} ctx - context
+         * @param {Object} session - session
+         * @param {Stream} stream - stream object
+         * 
+         * @returns {Promise}
+         */
+        async storeMessage(ctx, session, stream) {
+            // store message
+
+            // store stream to s3
+            const s3 = await this.storeMessageStream({
+                id: session.envelopeID,
+            }, stream);
+
+            // set s3 to outbound message
+            const result = await this.updateEntity(ctx, {
+                id: session.envelopeID,
+                s3,
+            });
+
+            return result;
+        },
+
+
+        async createEnvelope(session) {
+
+            const envelope = await this.broker.call("v1.emails.outbound.create", {});
+            session.envelopeID = envelope.id;
+            this.logger.info(`created envelope id=${envelope.id}`);
         },
         /**
          * close pools

@@ -64,6 +64,83 @@ module.exports = {
                 required: true,
             },
 
+            // sender address for this account
+            sender: {
+                type: "string",
+                required: false,
+            },
+
+            // email account smtp details
+            smtp: {
+                type: "object",
+                required: false,
+                props: {
+                    host: {
+                        type: "string",
+                        required: false,
+                    },
+                    port: {
+                        type: "number",
+                        required: false,
+                    },
+                    secure: {
+                        type: "boolean",
+                        required: false,
+                    },
+                    auth: {
+                        type: "object",
+                        required: false,
+                        props: {
+                            user: {
+                                type: "string",
+                                required: false,
+                            },
+                            pass: {
+                                type: "string",
+                                required: false,
+                            },
+                        }
+                    }
+                }
+            },
+
+            // email account imap details
+            imap: {
+                type: "object",
+                required: false,
+                props: {
+                    host: {
+                        type: "string",
+                        required: false,
+                    },
+                    port: {
+                        type: "number",
+                        required: false,
+                    },
+                    secure: {
+                        type: "boolean",
+                        required: false,
+                    },
+                    auth: {
+                        type: "object",
+                        required: false,
+                        props: {
+                            user: {
+                                type: "string",
+                                required: false,
+                            },
+                            pass: {
+                                type: "string",
+                                required: false,
+                            },
+                        }
+                    }
+                }
+            },
+
+
+            
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],
@@ -136,6 +213,52 @@ module.exports = {
                 return account;
             },
         },
+
+        /**
+         * validate from address
+         * 
+         * @actions
+         * @param {String} from - from address
+         * @param {String} user - account id
+         * 
+         * @returns {Object} - account
+         */
+        validateFrom: {
+            params: {
+                from: {
+                    type: "string",
+                    required: true,
+                },
+                user: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            permissions: ['emails.accounts.validateFrom'],
+            async handler(ctx) {
+                const { from, user } = ctx.params;
+
+                // find account
+                const account = await this.findEntity(null, {
+                    query: {
+                        email: from
+                    }
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404);
+                }
+
+                // check from
+                if (account.id !== user) {
+                    throw new MoleculerClientError("invalid from address", 401);
+                }
+
+                return account;
+            },
+        },
+
         // clean db
         clean: {
             async handler(ctx) {

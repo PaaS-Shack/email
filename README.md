@@ -1,35 +1,62 @@
-[![Moleculer](https://badgen.net/badge/Powered%20by/Moleculer/0e83cd)](https://moleculer.services)
+# Overview of Services
 
-# kube
-This is a [Moleculer](https://moleculer.services/)-based microservices project. Generated with the [Moleculer CLI](https://moleculer.services/docs/0.14/moleculer-cli.html).
+These are a set of services for managing email messages. They include functionality for receiving, parsing, signing, and sending email messages. The services are designed to be used together, but they can also be used independently. The services are designed to be used with the [MolecularJS]
 
-## Usage
-Start the project with `npm run dev` command. 
-In the terminal, try the following commands:
-- `nodes` - List all connected nodes.
-- `actions` - List all registered service actions.
-- `call greeter.hello` - Call the `greeter.hello` action.
-- `call greeter.welcome --name John` - Call the `greeter.welcome` action with the `name` parameter.
+## Installation
+
+```bash
+git clone https://github.com/paas-shack/email.git
+cd email
+npm i
+npm run dev
+```
+
+## Kubernetes Install
+
+YAML files are included to deploy the services to a Kubernetes cluster. The following command will deploy the services to a Kubernetes cluster:
+
+```bash
+kubectl apply -f yaml
+```
 
 
+## Requirements
 
-## Services
-- **api**: API Gateway services
-- **greeter**: Sample service with `hello` and `welcome` actions.
+The `emails` service requires the following:
+
+- An S3 bucket for storing email messages.
+- A MongoDB database for storing email-related data.
+- A DKIM key pair for signing email messages.
+- A valid domain name for sending email messages.   
+- A valid MX record for the domain name.
+- A valid SPF record for the domain name.
+- A valid DMARC record for the domain name. TODO: Add DMARC support.
 
 
-## Useful links
+# Services
 
-* Moleculer website: https://moleculer.services/
-* Moleculer Documentation: https://moleculer.services/docs/0.14/
+The following services are included:
 
-## NPM scripts
+- `emails.outbound`: Handles outbound email communication.
+- `emails.inbound`: Handles inbound email communication.
+- `emails.messages`: Manages email messages.
+- `emails.templates`: Manages email templates. TODO: Add support for email templates.
+- `emails.accounts`: Manages email users.
 
-- `npm run dev`: Start development mode (load all services locally with hot-reload & REPL)
-- `npm run start`: Start production mode (set `SERVICES` env variable to load certain services)
-- `npm run cli`: Start a CLI and connect to production. Don't forget to set production namespace with `--ns` argument in script
-- `npm run lint`: Run ESLint
-- `npm run ci`: Run continuous test mode with watching
-- `npm test`: Run tests & generate coverage report
-- `npm run dc:up`: Start the stack with Docker Compose
-- `npm run dc:down`: Stop the stack with Docker Compose
+## `emails.outbound` Service
+
+The `emails.outbound` service is designed for handling outbound email communication. It is responsible for sending emails, managing email pools, and integrating with a database for persistence.
+
+- [Documentation](docs/outbound.md)
+
+## `emails.inbound` Service
+
+The `emails.inbound` service is an inbound SMTP server designed to handle incoming email messages. It provides functionality for receiving, processing, and storing incoming emails.
+
+- [Documentation](docs/inbound.md)
+
+## `emails.messages` Service
+
+The `emails.messages` service is designed for managing email messages, including storing, parsing, signing, queuing, and adding additional information to email messages.
+
+- [Documentation](docs/messages.md)

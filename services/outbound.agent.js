@@ -290,7 +290,6 @@ module.exports = {
                 }
             });
 
-            console.log(info)
             // set info date
             info.date = Date.now();
             // set info host

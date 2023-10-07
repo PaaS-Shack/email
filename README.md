@@ -24,16 +24,12 @@ kubectl apply -f yaml
 
 The `emails` service requires the following:
 
-- An S3 bucket for storing email messages.
-- A MongoDB database for storing email-related data.
-- A DKIM key pair for signing email messages.
-- A valid domain name for sending email messages.   
-- A valid MX record for the domain name.
-- A valid SPF record for the domain name.
-- A valid DMARC record for the domain name. TODO: Add DMARC support.
+These are the required services:
+- `certificates` service: for creating and storing DKIM key pairs.
+- `config` service: for storing configuration settings.
+- `resolver` service: for resolving DNS records.
 
 ## Configuration
-
 
 The following configuration settings are required:
 

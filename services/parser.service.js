@@ -285,7 +285,6 @@ module.exports = {
                 throw new MoleculerClientError("Invalid envelope", 400, "INVALID_ENVELOPE");
             }
 
-            console.log(envelope)
         },
     },
 

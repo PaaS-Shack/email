@@ -319,8 +319,6 @@ module.exports = {
                             return reject(err);
                         }
 
-                        console.log(info.envelope);
-                        console.log(info.messageId);
                         await this.storeMessageStream({ id }, info.message);
 
                         // update message state

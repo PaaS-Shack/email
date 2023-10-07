@@ -617,31 +617,19 @@ module.exports = {
                 id: session.envelopeID
             });
 
-            let messageHashStream = new StreamHash({
-                algo: 'md5'
-            });
-
-            messageHashStream.on('hash', async (data) => {
-                await this.broker.call('v1.emails.inbound.update', {
-                    id: envelope.id,
-                    sourceMd5: data.hash,
-                    sourceSize: data.bytes
-                });
-            });
-
-            stream.on('error', err => messageHashStream.emit('error', err));
-
-
-            stream.pipe(messageHashStream)
-
             // store stream to s3
-            const s3 = await this.storeMessageStream(envelope, stream);
+            const s3 = await this.storeMessageStream(envelope, stream)
+                .catch((err) => {
+                    this.logger.error(`failed to store message stream ${err.message}`);
+                })
 
-            // update envelope with source
-            await this.broker.call("v1.emails.inbound.update", {
-                id: envelope.id,
-                s3
-            });
+            if (s3) {
+                // update envelope with source
+                await this.broker.call("v1.emails.inbound.update", {
+                    id: envelope.id,
+                    s3
+                });
+            }
 
             envelope = await this.broker.call("v1.emails.inbound.get", {
                 id: session.envelopeID

@@ -295,7 +295,7 @@ module.exports = {
             // set info host
             info.host = this.config["emails.outbound.hostname"];
             // set pool mx
-            info.mx = pool.options.host;
+            info.mx = pool.mx;
 
 
             // update message status and info
@@ -406,6 +406,8 @@ module.exports = {
                 secure, // use TLS
                 name: this.config["emails.outbound.hostname"],
             });
+
+            transport.mx = mxHost;
 
             //watch error
             transport.on('error', err => {

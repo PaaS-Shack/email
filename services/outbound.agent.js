@@ -477,7 +477,10 @@ module.exports = {
             if (!pool) {
                 // create pool
                 pool = await this.createPool(ctx, mxHost);
-
+                pool.on('end', () => {
+                    this.logger.info(`getPool ${mxHost} end`);
+                    this.pools.delete(fqdn);
+                });
                 // set pool
                 this.pools.set(fqdn, pool);
             }

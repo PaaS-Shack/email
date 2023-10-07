@@ -32,6 +32,47 @@ The `emails` service requires the following:
 - A valid SPF record for the domain name.
 - A valid DMARC record for the domain name. TODO: Add DMARC support.
 
+## Configuration
+
+
+The following configuration settings are required:
+
+### s3
+
+The `s3` configuration setting specifies the S3 bucket for storing email messages. The following configuration settings are required:
+
+- `s3.endPoint`: The S3 endpoint.
+- `s3.port`: The S3 port.
+- `s3.useSSL`: If to use ssl
+- `s3.accessKey`: The S3 access key.
+- `s3.secretKey`: The S3 secret key.
+- `s3.tempDir`: The tmp folder to use for storing email messages as cache.
+
+### emails.outbound
+
+The `emails.outbound` configuration setting specifies the outbound email service. The following configuration settings are required:
+
+- `emails.outbound.dkim.domainName`: The domain name for the DKIM key pair.
+- `emails.outbound.dkim.keySelector`: The key selector for the DKIM key pair.
+- `emails.outbound.hostname`: The hostname for the outbound email service.
+- `emails.outbound.maxSize`: The maximum size of an email message.
+- `emails.outbound.socketTimeout`: The socket timeout for the outbound email service.
+
+### emails.inbound
+
+The `emails.inbound` configuration setting specifies the inbound email service. The following configuration settings are required:
+
+- `emails.inbound.logging`: If to log inbound email messages.
+- `emails.inbound.hostname`: The hostname for the inbound email service.
+- `emails.inbound.disableVersionString`: If to disable the version string.
+- `emails.inbound.maxSize`: The maximum size of an email message.
+- `emails.inbound.authentication`: If to require authentication.
+- `emails.inbound.starttls`: If to require starttls.
+- `emails.inbound.secure`: If to require secure.
+- `emails.inbound.secured`: If to require secured.
+- `emails.inbound.socketTimeout`: The socket timeout for the inbound email service.
+- `emails.inbound.maxRecipients`: The maximum number of recipients for an email message.
+- `emails.inbound.bucket`: The S3 bucket for storing email messages.
 
 # Services
 

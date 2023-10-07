@@ -142,7 +142,12 @@ module.exports = {
          */
         async writeStreamToTmpFile(stream) {
             // create tmp file
-            const tmpFile = `/tmp/${crypto.randomBytes(16).toString('hex')}.eml`;
+            let tmpFile = null;
+            if (this.config['s3.tempDir']) {
+                tmpFile = `${this.config['s3.tempDir']}/${crypto.randomBytes(16).toString('hex')}.eml`;
+            } else {
+                tmpFile = `/tmp/${crypto.randomBytes(16).toString('hex')}.eml`;
+            }
 
             const writeStream = createWriteStream(tmpFile);
 

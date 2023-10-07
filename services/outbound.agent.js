@@ -411,12 +411,14 @@ module.exports = {
             transport.on('error', err => {
                 this.logger.error(`createTransport ${mxHost} ${port} ${err.message}`);
             });
-
-
-            // watch close
             transport.on('close', () => {
                 this.logger.info(`createTransport ${mxHost} ${port} close`);
             });
+            transport.on('idle', () => {
+                this.logger.info(`createTransport ${mxHost} ${port} idle`);
+            });
+
+
             return new Promise(async (resolve, reject) => {
                 transport.on('error', reject)
 

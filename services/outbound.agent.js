@@ -229,11 +229,6 @@ module.exports = {
 
                 this.logger.info(`queued ${message.id} now sending`);
 
-                const pool = await this.getPool(ctx, message.to[0]);
-
-                if (!pool) {
-                    throw new Error('no pool');
-                }
 
                 // group by to by mx host
                 const tos = message.to.reduce((acc, to) => {
@@ -247,6 +242,13 @@ module.exports = {
 
                 // loop tos
                 for (const [fqdn, to] of Object.entries(tos)) {
+
+                    const pool = await this.getPool(ctx, to[0]);
+
+                    if (!pool) {
+                        this.logger.error(`sendPoolEmail ${fqdn} no pool`);
+                        continue;
+                    }
                     // send email
                     await this.sendPoolEmail(ctx, pool, to, message)
                         .then(email => {

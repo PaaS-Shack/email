@@ -617,19 +617,34 @@ module.exports = {
                 id: session.envelopeID
             });
 
+            // sstore stream to local disk
+            const tmpFile = await this.wrtieStreamToTmpFile(stream);
+
+
             // store stream to s3
-            const s3 = await this.storeMessageStream(envelope, stream)
+            await this.storeMessageStream(envelope, fs.createReadStream(tmpFile))
+                .then(async (s3) => {
+                    this.logger.info(`stored message stream to s3 ${s3.bucket}/${s3.name}`);
+                    if (s3) {
+                        // update envelope with source
+                        await this.broker.call("v1.emails.inbound.update", {
+                            id: envelope.id,
+                            s3
+                        });
+                    }
+                    return s3;
+                })
                 .catch((err) => {
                     this.logger.error(`failed to store message stream ${err.message}`);
-                })
-
-            if (s3) {
-                // update envelope with source
-                await this.broker.call("v1.emails.inbound.update", {
-                    id: envelope.id,
-                    s3
+                }).finally((s3) => {
+                    if(!s3){
+                        this.logger.error(`failed to store message stream`);
+                    }
+                    // delete tmp file
+                    fs.unlink(tmpFile, () => { });
                 });
-            }
+
+
 
             envelope = await this.broker.call("v1.emails.inbound.get", {
                 id: session.envelopeID

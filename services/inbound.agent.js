@@ -620,6 +620,7 @@ module.exports = {
             // sstore stream to local disk
             const tmpFile = await this.writeStreamToTmpFile(stream);
 
+            this.logger.info(`wrote stream to tmp file ${tmpFile}`);
 
             // store stream to s3
             await this.storeMessageStream(envelope, fs.createReadStream(tmpFile))
@@ -637,14 +638,11 @@ module.exports = {
                 .catch((err) => {
                     this.logger.error(`failed to store message stream ${err.message}`);
                 }).finally((s3) => {
-                    if(!s3){
-                        this.logger.error(`failed to store message stream`);
-                    }
                     // delete tmp file
-                    fs.unlink(tmpFile, () => { });
+                    fs.unlink(tmpFile, () => {
+                        this.logger.info(`deleted tmp file ${tmpFile}`);
+                    });
                 });
-
-
 
             envelope = await this.broker.call("v1.emails.inbound.get", {
                 id: session.envelopeID

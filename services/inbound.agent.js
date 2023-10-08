@@ -618,7 +618,7 @@ module.exports = {
             });
 
             // sstore stream to local disk
-            const tmpFile = await this.wrtieStreamToTmpFile(stream);
+            const tmpFile = await this.writeStreamToTmpFile(stream);
 
 
             // store stream to s3

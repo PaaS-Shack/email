@@ -195,8 +195,14 @@ module.exports = {
                     }
                 });
                 this.logger.info(`cleaning ${entities.length} entities`);
-               
 
+                for (let index = 0; index < entities.length; index++) {
+                    const entity = entities[index];
+
+                    await this.removeEntity(ctx, {
+                        id: entity.id
+                    });
+                }
             },
         },
     },

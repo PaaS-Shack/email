@@ -179,6 +179,26 @@ module.exports = {
 
             },
         },
+        /**
+         * clean up old envelopes
+         * 
+         * @actions
+         * 
+         * @returns {Promise}
+         */
+        cleanup: {
+            async handler(ctx) {
+
+                const entities = await this.findEntities(null, {
+                    query: {
+                        from: null
+                    }
+                });
+                this.logger.info(`cleaning ${entities.length} entities`);
+               
+
+            },
+        },
     },
 
     /**
@@ -617,31 +637,32 @@ module.exports = {
                 id: session.envelopeID
             });
 
-            let messageHashStream = new StreamHash({
-                algo: 'md5'
-            });
+            // sstore stream to local disk
+            const tmpFile = await this.writeStreamToTmpFile(stream);
 
-            messageHashStream.on('hash', async (data) => {
-                await this.broker.call('v1.emails.inbound.update', {
-                    id: envelope.id,
-                    sourceMd5: data.hash,
-                    sourceSize: data.bytes
-                });
-            });
-
-            stream.on('error', err => messageHashStream.emit('error', err));
-
-
-            stream.pipe(messageHashStream)
+            this.logger.info(`wrote stream to tmp file ${tmpFile}`);
 
             // store stream to s3
-            const s3 = await this.storeMessageStream(envelope, stream);
-
-            // update envelope with source
-            await this.broker.call("v1.emails.inbound.update", {
-                id: envelope.id,
-                s3
-            });
+            await this.storeMessageStream(envelope, fs.createReadStream(tmpFile))
+                .then(async (s3) => {
+                    this.logger.info(`stored message stream to s3 ${s3.bucket}/${s3.name}`);
+                    if (s3) {
+                        // update envelope with source
+                        await this.broker.call("v1.emails.inbound.update", {
+                            id: envelope.id,
+                            s3
+                        });
+                    }
+                    return s3;
+                })
+                .catch((err) => {
+                    this.logger.error(`failed to store message stream ${err.message}`);
+                }).finally((s3) => {
+                    // delete tmp file
+                    fs.unlink(tmpFile, () => {
+                        this.logger.info(`deleted tmp file ${tmpFile}`);
+                    });
+                });
 
             envelope = await this.broker.call("v1.emails.inbound.get", {
                 id: session.envelopeID

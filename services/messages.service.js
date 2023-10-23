@@ -240,6 +240,7 @@ module.exports = {
                     "bounced",
                     "rejected",
                     "failed",
+                    "inbound",
                 ]
             },
 
@@ -292,6 +293,11 @@ module.exports = {
          * @returns {Object} - message
          */
         store: {
+            rest: {
+                method: "POST",
+                path: '/:id/store'
+            },
+            permissions: 'emails.messages.store',
             params: {
                 id: { type: "string" },
             },
@@ -346,6 +352,11 @@ module.exports = {
          * @returns {Object} - message
          */
         parse: {
+            rest: {
+                method: "POST",
+                path: '/:id/parse'
+            },
+            permissions: 'emails.messages.parse',
             params: {
                 id: { type: "string" },
             },
@@ -385,6 +396,11 @@ module.exports = {
          * @returns {Object} - message
          */
         sign: {
+            rest: {
+                method: "POST",
+                path: '/:id/sign'
+            },
+            permissions: 'emails.messages.sign',
             params: {
                 id: { type: "string" },
             },
@@ -425,6 +441,11 @@ module.exports = {
          * @returns {Object} - message
          */
         queue: {
+            rest: {
+                method: "POST",
+                path: '/:id/queue'
+            },
+            permissions: 'emails.messages.queue',
             params: {
                 id: { type: "string" },
             },
@@ -490,6 +511,78 @@ module.exports = {
                 });
 
                 return message;
+            }
+        },
+
+        /**
+         * Pull message from v1.emails.inbound and store them as messages
+         * 
+         * @actions
+         * @param {String} email - email address to pull messages from
+         * 
+         * @returns {Object} - message
+         */
+        pull: {
+            rest: {
+                method: "POST",
+                path: '/pull'
+            },
+            permissions: 'emails.messages.pull',
+            params: {
+                email: { type: "string" },
+            },
+            async handler(ctx) {
+                const params = Object.assign({}, ctx.params);
+                const email = params.email;
+
+                const emails = await ctx.call('v1.emails.inbound.find', {
+                    query: {
+                        to: [email]
+                    },
+                    fields: [
+                        'from',
+                        'to',
+                        's3',
+                        'id'
+                    ]
+                });
+
+                const messages = [];
+
+                // loop messages
+                for (let index = 0; index < emails.length; index++) {
+                    const email = emails[index];
+
+                    const parsed = await ctx.call('v1.emails.parser.parse', {
+                        id: email.id,
+                    }).catch(() => {
+                        return null;
+                    })
+
+                    if (!parsed) {
+                        continue;
+                    }
+
+                    const entity = {
+                        uid: email.id,
+                        from: email.from,
+                        to: Array.isArray(email.to) ? email.to : [email.to],
+                        s3: email.s3,
+                        state: "inbound",
+                        subject: parsed.subject,
+                        text: parsed.text,
+                        html: parsed.html,
+
+                    };
+                    const message = await this.createEntity(ctx, entity);
+                    await ctx.call('v1.emails.inbound.remove', {
+                        id: email.id,
+                    });
+                    messages.push(message);
+                }
+
+
+                return messages
             }
         },
 

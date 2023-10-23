@@ -28,6 +28,9 @@ module.exports = {
         ConfigLoader([
             'emails.**'
         ]),
+        Membership({
+            permissions: 'emails.accounts'
+        })
     ],
 
     /**
@@ -138,19 +141,30 @@ module.exports = {
                 }
             },
 
+            messages: {
+                type: "array",
+                virtual: true,
+                populate: function (ctx, values, entities, field) {
+                    return Promise.all(entities.map(async (entity) => {
+                        
+                    }));
 
-            
+                }
+            },
 
             ...DbService.FIELDS,// inject dbservice fields
+            ...Membership.FIELDS,// inject membership fields
         },
         defaultPopulates: [],
 
         scopes: {
             ...DbService.SCOPE,
+            ...Membership.SCOPE,
         },
 
         defaultScopes: [
             ...DbService.DSCOPE,
+            ...Membership.DSCOPE,
         ],
 
         // default init config settings

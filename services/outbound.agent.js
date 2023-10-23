@@ -692,6 +692,7 @@ module.exports = {
          */
         async validateFrom(ctx, from, user) {
             // validate from address
+            
             const result = await ctx.call("v1.emails.accounts.validateFrom", {
                 from,
                 user,

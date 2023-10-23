@@ -179,6 +179,26 @@ module.exports = {
 
             },
         },
+        /**
+         * clean up old envelopes
+         * 
+         * @actions
+         * 
+         * @returns {Promise}
+         */
+        cleanup: {
+            async handler(ctx) {
+
+                const entities = await this.findEntities(null, {
+                    query: {
+                        from: null
+                    }
+                });
+                this.logger.info(`cleaning ${entities.length} entities`);
+               
+
+            },
+        },
     },
 
     /**

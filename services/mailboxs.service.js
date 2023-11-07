@@ -51,40 +51,56 @@ module.exports = {
             name: {
                 type: "string",
                 required: true,
+                trim: true,
             },
 
-            // mailbox address
-            address: {
+            // mailbox username
+            username: {
                 type: "string",
                 required: true,
+                trim: true,
             },
 
-            // email mailbox messages
-            messages: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
-                populate: {
-                    action: "v1.emails.messages.resolve",
-                }
+            // mailbox domain
+            domain: {
+                type: "string",
+                required: true,
+                trim: true,
             },
 
-            // mailbox is alias
-            isAlias: {
-                type: "boolean",
-                required: false,
-                default: false,
-            },
-
-            // mailbox alias 
-            alias: {
+            // mailbox type
+            type: {
                 type: "string",
                 required: false,
-                default: null,
+                default: 'inbox',
+                enum: [
+                    'inbox',
+                    'sent',
+                    'drafts',
+                    'trash',
+                    'spam',
+                    'archive',
+                    'junk',
+                    'custom',
+                ]
             },
 
-            
+            // mailbox flags
+            flags: {
+                type: "array",
+                items: "string",
+                required: false,
+                default: [],
+            },
+
+            // mailbox messages
+            messages: {
+                type: "array",
+                items: "string",
+                required: false,
+                default: []
+            },
+
 
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -109,7 +125,132 @@ module.exports = {
      * service actions
      */
     actions: {
-       
+        /**
+         * add message id to mailbox
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox
+         */
+        addMessage: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+                // get mailbox
+                const mailbox = await this.resolveEntities(ctx, {
+                    id
+                });
+                // add message
+                mailbox.messages.push(message);
+                // save mailbox
+                return this.updateEntity(ctx, {
+                    id,
+                    messages: mailbox.messages
+                });
+            },
+        },
+
+        /**
+         * remove message id from mailbox
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox
+         */
+        removeMessage: {
+            rest: {
+                method: "DELETE",
+                path: "/:id/messages/:message",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+                // get mailbox
+                const mailbox = await this.resolveEntities(ctx, {
+                    id
+                });
+                // remove message
+                mailbox.messages = mailbox.messages.filter(msg => msg != message);
+                // save mailbox
+                return this.updateEntity(ctx, {
+                    id,
+                    messages: mailbox.messages
+                });
+            },
+        },
+
+        /**
+         * get mailbox message by id
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox
+         */
+        getMessage: {
+            rest: {
+                method: "GET",
+                path: "/:id/messages/:message",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+                // get mailbox
+                const mailbox = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check message
+                if (!mailbox.messages.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404);
+                }
+
+                // get message
+                return ctx.call('v1.emails.messages.get', {
+                    id: message
+                });
+            },
+        },
+
+        /**
+         */
+
         // clean db
         clean: {
             async handler(ctx) {

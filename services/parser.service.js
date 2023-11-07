@@ -11,6 +11,7 @@ const simpleParser = require('mailparser').simpleParser;
 const MailParser = require('mailparser').MailParser;
 
 const S3Mixin = require("../mixins/s3-store.mixin");
+const FSMixin = require("../mixins/fs-store.mixin");
 
 const dkim = require('../lib/dkim')
 
@@ -40,7 +41,7 @@ module.exports = {
         ConfigLoader([
             'emails.**'
         ]),
-        S3Mixin,
+        FSMixin,
     ],
 
     /**

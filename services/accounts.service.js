@@ -141,16 +141,6 @@ module.exports = {
                 }
             },
 
-            messages: {
-                type: "array",
-                virtual: true,
-                populate: function (ctx, values, entities, field) {
-                    return Promise.all(entities.map(async (entity) => {
-                        
-                    }));
-
-                }
-            },
 
             ...DbService.FIELDS,// inject dbservice fields
             ...Membership.FIELDS,// inject membership fields

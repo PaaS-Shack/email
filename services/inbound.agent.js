@@ -6,6 +6,7 @@ const ConfigLoader = require("config-mixin");
 const { MoleculerClientError } = require("moleculer").Errors;
 
 const S3Mixin = require("../mixins/s3-store.mixin");
+const FSMixin = require("../mixins/fs-store.mixin");
 
 /**
  * this is a inbound smtp server
@@ -38,7 +39,7 @@ module.exports = {
             "emails.**",
             "s3.**",
         ]),
-        S3Mixin
+        FSMixin
     ],
 
     /**

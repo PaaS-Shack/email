@@ -55,6 +55,7 @@ module.exports = {
             // email account password
             password: {
                 type: "string",
+                hidden: true,
                 required: true,
             },
 
@@ -139,18 +140,22 @@ module.exports = {
             },
 
 
-            
+
 
             ...DbService.FIELDS,// inject dbservice fields
+            ...Membership.FIELDS,// inject membership fields
         },
+
         defaultPopulates: [],
 
         scopes: {
             ...DbService.SCOPE,
+            ...Membership.SCOPE,
         },
 
         defaultScopes: [
             ...DbService.DSCOPE,
+            ...Membership.DSCOPE,
         ],
 
         // default init config settings
@@ -205,8 +210,10 @@ module.exports = {
                     throw new MoleculerClientError("account not found", 404);
                 }
 
+                const same = await bcrypt.compare((account.password, password));
+
                 // check password
-                if (account.password !== password) {
+                if (same) {
                     throw new MoleculerClientError("invalid password", 401);
                 }
 
@@ -234,16 +241,11 @@ module.exports = {
                     required: true,
                 },
             },
-            permissions: ['emails.accounts.validateFrom'],
             async handler(ctx) {
                 const { from, user } = ctx.params;
 
                 // find account
-                const account = await this.findEntity(null, {
-                    query: {
-                        email: from
-                    }
-                });
+                const account = await this.getAccount(ctx, from);
 
                 // check account
                 if (!account) {
@@ -256,6 +258,57 @@ module.exports = {
                 }
 
                 return account;
+            },
+        },
+
+        /**
+         * register new account
+         * 
+         * @actions
+         * @param {String} username - account username
+         * @param {String} password - account password
+         * 
+         * @returns {Object} - account
+         */
+        register: {
+            rest: {
+                method: "POST",
+                path: "/register"
+            },
+            params: {
+                username: {
+                    type: "string",
+                    required: true,
+                },
+                password: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { username, password } = ctx.params;
+
+                // find account
+                const account = await this.getAccount(null, username);
+
+                // check account
+                if (account) {
+                    throw new MoleculerClientError("account already exists", 409);
+                }
+
+                const entity = {
+                    username,
+                };
+
+                entity.passwordRaw = entity.password;
+                entity.password = await bcrypt.hash(entity.password, 10);
+
+                // create account
+                const newAccount = await this.createEntity(ctx, entity);
+
+                this.logger.info(`new email account registerd`);
+
+                return newAccount;
             },
         },
 
@@ -289,7 +342,40 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * get account by username
+         * 
+         * @param {Object} ctx - Molecular context object
+         * @param {String} username - account username
+         * 
+         * @returns {Object} - account
+         */
+        async getAccount(ctx, username) {
+            // find account
+            const account = await this.findEntity(ctx, {
+                query: {
+                    username,
+                }
+            });
 
+            return account;
+        },
+
+        /**
+         * get account by id
+         * 
+         * @param {String} id - account id
+         * 
+         * @returns {Object} - account
+         */
+        async getById(id) {
+            // find account
+            const account = await this.resolveEntities(null, {
+                id,
+            });
+
+            return account;
+        },
     }
 
 }

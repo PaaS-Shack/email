@@ -5,8 +5,7 @@ const { MoleculerClientError } = require("moleculer").Errors;
 
 
 /**
- * This is the email mailboxs service 
- * Used by imap service
+ * this is the email mailboxs service 
  */
 
 module.exports = {
@@ -47,44 +46,113 @@ module.exports = {
 
         fields: {
 
+            // email account id
+            account: {
+                type: "string",
+                required: true,
+                populate: {
+                    action: "v1.emails.accounts.get",
+                },
+                description: "email account id",
+            },
+
             // email mailbox name
             name: {
                 type: "string",
                 required: true,
+                empty: false,
+                description: "email mailbox name",
             },
 
-            // mailbox address
-            address: {
-                type: "string",
-                required: true,
+            // email parts
+            parts:{
+                local:{
+                    type:"string",
+                    required:true,
+                    description:"local part of email address"
+                },
+                domain:{
+                    type:"string",
+                    required:true,
+                    description:"domain part of email address"
+                },
             },
 
-            // email mailbox messages
-            messages: {
+            // email mailbox alias
+            alias: {
                 type: "array",
                 required: false,
                 default: [],
                 items: "string",
-                populate: {
-                    action: "v1.emails.messages.resolve",
-                }
+                description: "email mailbox alias",
             },
 
-            // mailbox is alias
-            isAlias: {
+            // email mailbox send as alias
+            sender: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                description: "email mailbox send as alias",
+            },
+
+            // email mailbox forward
+            forward: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                description: "email mailbox forward",
+            },
+
+            // email mailbox quota
+            quota: {
+                type: "number",
+                required: false,
+                default: 0,
+                description: "email mailbox quota",
+            },
+
+            // email mailbox quota used
+            quotaUsed: {
+                type: "number",
+                required: false,
+                default: 0,
+                description: "email mailbox quota used",
+            },
+
+            // mailbox signature
+            signature: {
+                type: "string",
+                required: false,
+                default: "",
+                description: "mailbox signature",
+            },
+
+            // mailbox auto reply
+            autoReply: {
                 type: "boolean",
                 required: false,
                 default: false,
+                description: "mailbox auto reply",
             },
 
-            // mailbox alias 
-            alias: {
+            // mailbox auto reply message
+            autoReplyMessage: {
                 type: "string",
                 required: false,
-                default: null,
+                default: "",
+                description: "mailbox auto reply message",
             },
 
-            
+
+            // mailbox read only
+            readOnly: {
+                type: "boolean",
+                required: false,
+                default: false,
+                description: "mailbox read only",
+            },
 
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -109,7 +177,7 @@ module.exports = {
      * service actions
      */
     actions: {
-       
+
         // clean db
         clean: {
             async handler(ctx) {

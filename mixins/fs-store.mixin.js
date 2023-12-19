@@ -154,13 +154,7 @@ module.exports = {
      * Service started lifecycle event handler
      */
     started() {
-        this.s3 = new Minio.Client({
-            endPoint: this.config['s3.endpoint'],
-            port: this.config['s3.port'],
-            useSSL: this.config['s3.useSSL'],
-            accessKey: this.config['s3.accessKey'],
-            secretKey: this.config['s3.secretKey']
-        });
+        
     },
 
     /**

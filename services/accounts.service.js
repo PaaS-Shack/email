@@ -70,6 +70,26 @@ module.exports = {
                 required: false,
             },
 
+            // email new messages
+            inbox: {
+                type: "array",
+                required: false,
+                default: [],
+                populate: {
+                    action: "v1.emails.inbound.resolve",
+                }
+            },
+
+            // email inbound messages
+            inbound: {
+                type: "array",
+                required: false,
+                default: [],
+                populate: {
+                    action: "v1.emails.inbound.resolve",
+                }
+            },
+
             // email account smtp details
             smtp: {
                 type: "object",
@@ -139,7 +159,7 @@ module.exports = {
             },
 
 
-            
+
 
             ...DbService.FIELDS,// inject dbservice fields
         },
@@ -174,6 +194,10 @@ module.exports = {
          * @returns {Object} - account
          */
         auth: {
+            rest: {
+                method: "POST",
+                path: "/auth"
+            },
             params: {
                 username: {
                     type: "string",
@@ -189,7 +213,6 @@ module.exports = {
                     default: 'basic',
                 }
             },
-            permissions: ['emails.accounts.auth'],
             async handler(ctx) {
                 const { username, password } = ctx.params;
 
@@ -202,12 +225,12 @@ module.exports = {
 
                 // check account
                 if (!account) {
-                    throw new MoleculerClientError("account not found", 404);
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
                 }
 
                 // check password
                 if (account.password !== password) {
-                    throw new MoleculerClientError("invalid password", 401);
+                    throw new MoleculerClientError("invalid password", 401, "INVALID_PASSWORD");
                 }
 
                 return account;
@@ -224,6 +247,10 @@ module.exports = {
          * @returns {Object} - account
          */
         validateFrom: {
+            rest: {
+                method: "GET",
+                path: "/validate-from/:from/:user"
+            },
             params: {
                 from: {
                     type: "string",
@@ -234,7 +261,6 @@ module.exports = {
                     required: true,
                 },
             },
-            permissions: ['emails.accounts.validateFrom'],
             async handler(ctx) {
                 const { from, user } = ctx.params;
 
@@ -247,16 +273,305 @@ module.exports = {
 
                 // check account
                 if (!account) {
-                    throw new MoleculerClientError("account not found", 404);
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
                 }
 
                 // check from
                 if (account.id !== user) {
-                    throw new MoleculerClientError("invalid from address", 401);
+                    throw new MoleculerClientError("invalid from address", 401, "INVALID_FROM_ADDRESS");
                 }
 
                 return account;
             },
+        },
+
+        /**
+         * mark message as read
+         * 
+         * @actions
+         * @param {String} id - account id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} - account
+         */
+        markRead: {
+            rest: {
+                method: "PUT",
+                path: "/:id/read/:message"
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+
+                // find account
+                const account = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
+                }
+
+                // check message
+                if (!account.inbox.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                // mark message as read
+                await this.updateEntity(ctx, {
+                    id,
+                    $pull: {
+                        inbox: message
+                    }
+                });
+
+                return account;
+            }
+        },
+
+        /**
+         * mark message as unread
+         * 
+         * @actions
+         * @param {String} id - account id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} - account
+         */
+        markUnread: {
+            rest: {
+                method: "PUT",
+                path: "/:id/unread/:message"
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+
+                // find account
+                const account = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
+                }
+
+                // check message
+                if (!account.inbox.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                if (!account.inbound.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                // mark message as read
+                await this.updateEntity(ctx, {
+                    id,
+                    $push: {
+                        inbox: message
+                    }
+                });
+
+                return account;
+            }
+        },
+
+        /**
+         * mark message as deleted
+         * 
+         * @actions
+         * @param {String} id - account id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} - account
+         */
+        markDeleted: {
+            rest: {
+                method: "PUT",
+                path: "/:id/deleted/:message"
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+
+                // find account
+                const account = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
+                }
+
+                // check message
+                if (!account.inbound.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                // mark message as read
+                await this.updateEntity(ctx, {
+                    id,
+                    $pull: {
+                        inbox: message,
+                        inbound: message
+                    }
+                });
+
+                return account;
+            }
+        },
+
+        /**
+         * read message
+         * 
+         * @actions
+         * @param {String} id - account id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} - account
+         */
+        readMessage: {
+            rest: {
+                method: "GET",
+                path: "/:id/message/:message"
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+
+                // find account
+                const account = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
+                }
+
+                // check message
+                if (!account.inbound.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                // read message
+                const result = await ctx.call('v1.emails.inbound.resolve', {
+                    id: message
+                });
+
+                if (!result) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                if (!result.s3) {
+                    throw new MoleculerClientError("raw message not found", 404, "RAW_MESSAGE_NOT_FOUND");
+                }
+
+                return ctx.call('v1.emails.parser.parse', {
+                    id: result.id
+                });
+            }
+        },
+
+        /**
+         * validate dkim signature
+         * 
+         * @actions
+         * @param {String} id - account id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} - account
+         */
+        validateDkim: {
+            rest: {
+                method: "GET",
+                path: "/:id/dkim/:message"
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                message: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, message } = ctx.params;
+
+                // find account
+                const account = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
+                }
+
+                // check message
+                if (!account.inbound.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                // read message
+                const result = await ctx.call('v1.emails.inbound.resolve', {
+                    id: message
+                });
+
+                if (!result) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                if (!result.s3) {
+                    throw new MoleculerClientError("raw message not found", 404, "RAW_MESSAGE_NOT_FOUND");
+                }
+
+                return ctx.call('v1.emails.parser.verify', {
+                    id: result.id
+                });
+            }
         },
 
         // clean db
@@ -282,7 +597,36 @@ module.exports = {
      * service events
      */
     events: {
+        /**
+         * on email received
+         */
+        async "emails.inbound.received"(ctx) {
+            const { envelope } = ctx.params;
+            const { from, to } = envelope;
 
+            // find account
+            const account = await this.findEntity(null, {
+                query: {
+                    email: to[0].address
+                }
+            });
+
+            // check account
+            if (!account) {
+                throw new MoleculerClientError("account not found", 404);
+            }
+
+            // add inbound message
+            await this.updateEntity(ctx, {
+                id: account.id,
+                $push: {
+                    inbound: envelope.id,
+                    inbox: envelope.id
+                }
+            }, { raw: true });
+
+
+        }
     },
 
     /**

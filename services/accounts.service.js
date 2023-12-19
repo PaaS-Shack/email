@@ -574,6 +574,62 @@ module.exports = {
             }
         },
 
+        /**
+         * import message for account
+         * 
+         * @actions
+         * @param {String} id - account id
+         * 
+         * @returns {Object} - account
+         */
+        import: {
+            rest: {
+                method: "POST",
+                path: "/:id/import"
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id } = ctx.params;
+
+                // find account
+                const account = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
+                }
+
+                const messages = await ctx.call('v1.emails.inbound.find', {
+                    query: {
+                        to: account.email
+                    },
+                    fields: ['id']
+                });
+
+                // check messages
+                if (!messages.length) {
+                    throw new MoleculerClientError("no messages found", 404, "MESSAGES_NOT_FOUND");
+                }
+
+                // import messages
+                const updated = await this.updateEntity(ctx, {
+                    id,
+                    $push: {
+                        inbound: messages.map(message => message.id)
+                    }
+                }, { raw: true });
+
+                return updated;
+            }
+        },
+
         // clean db
         clean: {
             async handler(ctx) {

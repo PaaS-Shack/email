@@ -91,6 +91,10 @@ module.exports = {
          * @returns {Object} - parsed message
          */
         parse: {
+            rest: {
+                method: "GET",
+                path: "/:id/parse",
+            },
             params: {
                 id: { type: "string" },
             },
@@ -119,6 +123,10 @@ module.exports = {
          * @returns {Promise} - resolves to s3 object
          */
         verify: {
+            rest: {
+                method: "GET",
+                path: "/:id/verify",
+            },
             params: {
                 id: { type: "string" },
             },
@@ -181,6 +189,10 @@ module.exports = {
          * @returns {Promise} - resolves to s3 object
          */
         sign: {
+            rest: {
+                method: "GET",
+                path: "/:id/sign",
+            },
             params: {
                 id: { type: "string" },
             },

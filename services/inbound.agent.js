@@ -283,7 +283,7 @@ module.exports = {
                     });
                 }
 
-                return true;
+                return entities;
             },
         },
     },

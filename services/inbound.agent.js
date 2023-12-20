@@ -307,13 +307,20 @@ module.exports = {
          */
         markAllNotSmap: {
             async handler(ctx) {
-                return this.updateEntities(ctx, {
-                    query: {},
-                    changes: {
-                        isSpam: false,
-                    },
-                    scope: false
+                const entities = await this.findEntities(ctx, {
+                    scope: '-notSpam',
                 });
+
+                for (let index = 0; index < entities.length; index++) {
+                    const entity = entities[index];
+
+                    await this.updateEntity(ctx, {
+                        id: entity.id,
+                        isSpam: false,
+                    });
+                }
+
+                return true;
             },
         },
     },

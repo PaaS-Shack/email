@@ -154,7 +154,7 @@ module.exports = {
         // default database scope
         defaultScopes: [
             ...DbService.DSCOPE,
-            'notSpam',
+           // 'notSpam',
         ],// inject dbservice dscope
 
         // default init config settings

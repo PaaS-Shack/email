@@ -41,7 +41,7 @@ module.exports = {
         ConfigLoader([
             'emails.**'
         ]),
-        FSMixin,
+        S3Mixin,
     ],
 
     /**

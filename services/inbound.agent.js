@@ -39,7 +39,7 @@ module.exports = {
             "emails.**",
             "s3.**",
         ]),
-        FSMixin
+        S3Mixin
     ],
 
     /**

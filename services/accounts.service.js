@@ -691,7 +691,7 @@ module.exports = {
                 }
 
                 // send message
-                const message = ctx.call('v1.emails.messages.create', {
+                const message = await ctx.call('v1.emails.messages.create', {
                     from: account.email,
                     to: [to],
                     subject,

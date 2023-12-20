@@ -268,10 +268,20 @@ module.exports = {
          */
         notSpam: {
             async handler(ctx) {
-
-                await this.updateMany(ctx, {}, {
-                    isSpam: false,
+                // find all envelopes
+                const entities = await this.findEntities(null, {
+                    fields: ['id'],
                 });
+
+                // loop entities
+                for (let index = 0; index < entities.length; index++) {
+                    const entity = entities[index];
+
+                    await this.updateEntity(ctx, {
+                        id: entity.id,
+                        isSpam: false,
+                    });
+                }
 
                 return true;
             },

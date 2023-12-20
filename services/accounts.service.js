@@ -670,7 +670,7 @@ module.exports = {
             // find account
             const account = await this.findEntity(null, {
                 query: {
-                    email: to[0].address
+                    email: to[0]
                 }
             });
 

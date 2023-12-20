@@ -266,25 +266,14 @@ module.exports = {
          * 
          * @returns {Promise}
          */
-        notSpam: {
+        markAllNotSmap: {
             async handler(ctx) {
-                // find all envelopes
-                const entities = await this.findEntities(null, {
-                    fields: ['id'],
-                });
-
-                // loop entities
-                for (let index = 0; index < entities.length; index++) {
-                    const entity = entities[index];
-
-                    await this.updateEntity(ctx, {
-                        id: entity.id,
+                return this.updateEntities(ctx, {
+                    query: {},
+                    changes: {
                         isSpam: false,
-                        scope: '-notSpam',
-                    });
-                }
-
-                return entities;
+                    },
+                });
             },
         },
     },

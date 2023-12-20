@@ -377,8 +377,8 @@ module.exports = {
                 }
 
                 // check message
-                if (!account.inbox.includes(message)) {
-                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                if (account.inbox.includes(message)) {
+                    throw new MoleculerClientError("message found", 404, "MESSAGE_FOUND");
                 }
 
                 if (!account.inbound.includes(message)) {

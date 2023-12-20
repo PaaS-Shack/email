@@ -333,7 +333,7 @@ module.exports = {
                     $pull: {
                         inbox: message
                     }
-                });
+                }, { raw: true });
 
                 return account;
             }
@@ -391,7 +391,7 @@ module.exports = {
                     $push: {
                         inbox: message
                     }
-                });
+                }, { raw: true });
 
                 return account;
             }
@@ -446,7 +446,7 @@ module.exports = {
                         inbox: message,
                         inbound: message
                     }
-                });
+                }, { raw: true });
 
                 return account;
             }

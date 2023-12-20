@@ -309,6 +309,7 @@ module.exports = {
             async handler(ctx) {
                 const entities = await this.findEntities(ctx, {
                     scope: '-notSpam',
+                    fields: ['id'],
                 });
 
                 for (let index = 0; index < entities.length; index++) {
@@ -317,6 +318,7 @@ module.exports = {
                     await this.updateEntity(ctx, {
                         id: entity.id,
                         isSpam: false,
+                        scope: '-notSpam',
                     });
                 }
 

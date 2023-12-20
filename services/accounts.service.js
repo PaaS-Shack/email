@@ -706,6 +706,11 @@ module.exports = {
                     }
                 }, { raw: true });
 
+                // queue message
+                await ctx.call('v1.emails.messages.queue', {
+                    id: message.id
+                });
+
                 return updated;
             }
         },

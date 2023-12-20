@@ -89,6 +89,13 @@ module.exports = {
                 default: null,
             },
 
+            // envelope is spam
+            isSpam: {
+                type: 'boolean',
+                required: false,
+                default: false,
+            },
+
 
             // envelope s3 object
             s3: {
@@ -138,10 +145,17 @@ module.exports = {
         // database scopes
         scopes: {
             ...DbService.SCOPE,// inject dbservice scope
+            notSpam: {
+                isSpam: false
+            },
+
         },
 
         // default database scope
-        defaultScopes: [...DbService.DSCOPE],// inject dbservice dscope
+        defaultScopes: [
+            ...DbService.DSCOPE,
+            'notSpam',
+        ],// inject dbservice dscope
 
         // default init config settings
         config: {
@@ -204,6 +218,44 @@ module.exports = {
                         id: entity.id
                     });
                 }
+            },
+        },
+
+        /**
+         * mark envelope as spam
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * 
+         * @returns {Promise}
+         */
+        spam: {
+            rest: {
+                method: "PUT",
+                path: "/:id/spam",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    empty: false,
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const envelope = await this.resolveEntities(ctx, {
+                    id: ctx.params.id
+                });
+
+                if (!envelope) {
+                    throw new MoleculerClientError('envelope not found', 404);
+                }
+
+                await this.updateEntity(ctx, {
+                    id: envelope.id,
+                    isSpam: true,
+                });
+
+                return true;
             },
         },
     },

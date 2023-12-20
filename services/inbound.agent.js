@@ -260,6 +260,45 @@ module.exports = {
         },
 
         /**
+         * mark envelope as not spam
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * 
+         * @returns {Promise}
+         */
+        notSpam: {
+            rest: {
+                method: "PUT",
+                path: "/:id/notspam",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    empty: false,
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const envelope = await this.resolveEntities(ctx, {
+                    id: ctx.params.id,
+                    scope: '-notSpam',
+                });
+
+                if (!envelope) {
+                    throw new MoleculerClientError('envelope not found', 404);
+                }
+
+                await this.updateEntity(ctx, {
+                    id: envelope.id,
+                    isSpam: false,
+                });
+
+                return true;
+            },
+        },
+
+        /**
          * mark all envelopes as not spam
          * 
          * @actions

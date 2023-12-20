@@ -618,13 +618,20 @@ module.exports = {
                     throw new MoleculerClientError("no messages found", 404, "MESSAGES_NOT_FOUND");
                 }
 
+                // import messages filter for ids
+                const inbound = [];
+                for (let index = 0; index < messages.length; index++) {
+                    const message = messages[index];
+                    if(!account.inbound.includes(message.id)){
+                        inbound.push(message.id);
+                    }
+                }
+
                 // import messages
                 const updated = await this.updateEntity(ctx, {
                     id,
-                    $push: {
-                        inbound: messages.map(message => message.id)
-                    }
-                }, { raw: true });
+                    inbound: inbound
+                });
 
                 return updated;
             }

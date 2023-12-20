@@ -90,6 +90,16 @@ module.exports = {
                 }
             },
 
+            // email outbound messages
+            outbound: {
+                type: "array",
+                required: false,
+                default: [],
+                populate: {
+                    action: "v1.emails.messages.resolve",
+                }
+            },
+
             // email account smtp details
             smtp: {
                 type: "object",
@@ -628,6 +638,73 @@ module.exports = {
                     id,
                     inbound: messages.map(message => message.id),
                 });
+
+                return updated;
+            }
+        },
+
+        /**
+         * send message from account 
+         * 
+         * @actions
+         * @param {String} id - account id
+         * @param {String} to - to address
+         * @param {String} subject - message subject
+         * @param {String} text - message text
+         * 
+         * @returns {Object} - account
+         */
+        send: {
+            rest: {
+                method: "POST",
+                path: "/:id/send"
+            },
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                },
+                to: {
+                    type: "string",
+                    required: true,
+                },
+                subject: {
+                    type: "string",
+                    required: true,
+                },
+                text: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { id, to, subject, text } = ctx.params;
+
+                // find account
+                const account = await this.resolveEntities(ctx, {
+                    id
+                });
+
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
+                }
+
+                // send message
+                const message = ctx.call('v1.emails.messages.create', {
+                    from: account.email,
+                    to: [to],
+                    subject,
+                    text,
+                });
+
+                // update account
+                const updated = await this.updateEntity(ctx, {
+                    id,
+                    $push: {
+                        outbound: message.id
+                    }
+                }, { raw: true });
 
                 return updated;
             }

@@ -276,7 +276,7 @@ module.exports = {
                     throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
                 }
 
-                // check from
+                // check from address
                 if (account.id !== user) {
                     throw new MoleculerClientError("invalid from address", 401, "INVALID_FROM_ADDRESS");
                 }
@@ -317,13 +317,18 @@ module.exports = {
                     id
                 });
 
-                // check account
+                // check account exists
                 if (!account) {
                     throw new MoleculerClientError("account not found", 404, "ACCOUNT_NOT_FOUND");
                 }
 
-                // check message
+                // check message is not already read
                 if (!account.inbox.includes(message)) {
+                    throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
+                }
+
+                // check message is part of account
+                if (!account.inbound.includes(message)) {
                     throw new MoleculerClientError("message not found", 404, "MESSAGE_NOT_FOUND");
                 }
 

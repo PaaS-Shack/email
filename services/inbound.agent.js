@@ -280,6 +280,7 @@ module.exports = {
                     await this.updateEntity(ctx, {
                         id: entity.id,
                         isSpam: false,
+                        scope: '-notSpam',
                     });
                 }
 

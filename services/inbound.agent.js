@@ -312,6 +312,7 @@ module.exports = {
                     changes: {
                         isSpam: false,
                     },
+                    scope: false
                 });
             },
         },

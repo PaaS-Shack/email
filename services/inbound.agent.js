@@ -258,6 +258,24 @@ module.exports = {
                 return true;
             },
         },
+
+        /**
+         * mark all envelopes as not spam
+         * 
+         * @actions
+         * 
+         * @returns {Promise}
+         */
+        notSpam: {
+            async handler(ctx) {
+
+                await this.updateMany(ctx, {}, {
+                    isSpam: false,
+                });
+
+                return true;
+            },
+        },
     },
 
     /**

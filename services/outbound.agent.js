@@ -457,7 +457,7 @@ module.exports = {
             this.logger.info(`getPool MX ${to}`);
 
             // resolve mx records
-            const mxRecords = await ctx.call('v1.utils.dns.resolve', {
+            const mxRecords = await ctx.call('v1.utils.dns.lookup', {
                 host: fqdn,
                 type: 'MX'
             });
@@ -715,7 +715,7 @@ module.exports = {
             const fqdn = to.split('@')[1];
 
             // resolve mx records
-            const mxRecords = await ctx.call('v1.utils.dns.resolve', {
+            const mxRecords = await ctx.call('v1.utils.dns.lookup', {
                 host: fqdn,
                 type: 'MX'
             });

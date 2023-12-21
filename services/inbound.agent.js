@@ -154,7 +154,7 @@ module.exports = {
         // default database scope
         defaultScopes: [
             ...DbService.DSCOPE,
-           // 'notSpam',
+            // 'notSpam',
         ],// inject dbservice dscope
 
         // default init config settings
@@ -759,9 +759,14 @@ module.exports = {
         },
 
         async handleMessage(stream, session, server) {
+
+
             let envelope = await this.broker.call("v1.emails.inbound.get", {
                 id: session.envelopeID
             });
+
+            // delete session envelope id for next message on connection
+            delete session.envelopeID;
 
             // sstore stream to local disk
             const tmpFile = await this.writeStreamToTmpFile(stream);

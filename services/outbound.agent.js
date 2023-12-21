@@ -278,7 +278,8 @@ module.exports = {
         async sendPoolEmail(ctx, pool, to, message) {
             // resolve dkim
             const dkim = await ctx.call('v1.certificates.resolveDKIM', {
-                domain: message.from.split('@')[1],
+                domain: this.config['emails.outbound.dkim.domainName'],
+                keySelector: this.config['emails.outbound.dkim.keySelector'],
             });
 
             // send email

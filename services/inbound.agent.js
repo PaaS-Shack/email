@@ -765,7 +765,6 @@ module.exports = {
                 id: session.envelopeID
             });
 
-
             // sstore stream to local disk
             const tmpFile = await this.writeStreamToTmpFile(stream);
 
@@ -775,7 +774,7 @@ module.exports = {
             const readStream = fs.createReadStream(tmpFile)
 
             // get stream hash
-            const streamHash = new StreamHash(readStream);
+            const streamHash = new StreamHash();
 
             streamHash.once('hash', async (hash) => {
                 // update envelope with sourceMd5
@@ -789,6 +788,8 @@ module.exports = {
                     envelope
                 });
             });
+
+            readStream.pipe(streamHash);
 
             // store stream to s3
             await this.storeMessageStream(envelope, readStream)

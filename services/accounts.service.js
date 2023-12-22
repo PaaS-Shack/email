@@ -821,7 +821,8 @@ module.exports = {
 
             // check account
             if (!account) {
-                throw new MoleculerClientError("account not found", 404);
+                this.logger.warn(`account not found for ${to[0]}`);
+                return;
             }
 
             // add inbound message

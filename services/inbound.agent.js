@@ -778,6 +778,7 @@ module.exports = {
 
             streamHash.once('hash', async (hash) => {
                 // update envelope with sourceMd5
+                this.logger.info(`stream hash ${hash.hash} ${hash.bytes}`);
                 envelope = await this.broker.call("v1.emails.inbound.update", {
                     id: envelope.id,
                     sourceMd5: hash.hash,

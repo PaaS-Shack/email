@@ -765,8 +765,6 @@ module.exports = {
                 id: session.envelopeID
             });
 
-            // delete session envelope id for next message on connection
-            delete session.envelopeID;
 
             // sstore stream to local disk
             const tmpFile = await this.writeStreamToTmpFile(stream);

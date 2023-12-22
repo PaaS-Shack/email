@@ -773,15 +773,38 @@ module.exports = {
 
             this.logger.info(`wrote stream to tmp file ${tmpFile}`);
 
+            // create read stream
+            const readStream = fs.createReadStream(tmpFile)
+
+            // get stream hash
+            const streamHash = StreamHash(readStream);
+
+            streamHash.once('hash', async (hash) => {
+                // update envelope with sourceMd5
+                envelope = await this.broker.call("v1.emails.inbound.update", {
+                    id: envelope.id,
+                    sourceMd5: hash.hash,
+                    sourceSize: hash.bytes,
+                });
+                // emit envelope hash event
+                await this.broker.emit('emails.inbound.hash', {
+                    envelope
+                });
+            });
+
             // store stream to s3
-            await this.storeMessageStream(envelope, fs.createReadStream(tmpFile))
+            await this.storeMessageStream(envelope, readStream)
                 .then(async (s3) => {
                     this.logger.info(`stored message stream to s3 ${s3.bucket}/${s3.name}`);
                     if (s3) {
                         // update envelope with source
-                        await this.broker.call("v1.emails.inbound.update", {
+                        envelope = await this.broker.call("v1.emails.inbound.update", {
                             id: envelope.id,
                             s3
+                        });
+                        // emit envelope stored event
+                        await this.broker.emit('emails.inbound.stored', {
+                            envelope
                         });
                     }
                     return s3;

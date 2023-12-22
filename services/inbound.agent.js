@@ -777,7 +777,7 @@ module.exports = {
             const readStream = fs.createReadStream(tmpFile)
 
             // get stream hash
-            const streamHash = StreamHash(readStream);
+            const streamHash = new StreamHash(readStream);
 
             streamHash.once('hash', async (hash) => {
                 // update envelope with sourceMd5

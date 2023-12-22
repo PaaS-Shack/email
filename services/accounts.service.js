@@ -45,6 +45,18 @@ module.exports = {
 
         fields: {
 
+            // email account name
+            name: {
+                type: "string",
+                required: true,
+            },
+
+            // email account description
+            description: {
+                type: "string",
+                required: false,
+            },
+
             // email account username
             username: {
                 type: "string",

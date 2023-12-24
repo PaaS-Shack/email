@@ -706,6 +706,8 @@ module.exports = {
                     inbound: messages.map(message => message.id),
                 });
 
+                this.logger.info(`imported ${messages.length} messages`);
+
                 return updated;
             }
         },
@@ -773,6 +775,8 @@ module.exports = {
                     }
                 }, { raw: true });
 
+                this.logger.info(`message sent ${message.id}`);
+
                 // queue message
                 await ctx.call('v1.emails.messages.queue', {
                     id: message.id
@@ -811,19 +815,22 @@ module.exports = {
         async "emails.inbound.received"(ctx) {
             const { envelope } = ctx.params;
             const { from, to } = envelope;
+            const email = to[0];
 
             // find account
             const account = await this.findEntity(null, {
                 query: {
-                    email: to[0]
+                    email: email
                 }
             });
 
             // check account
             if (!account) {
-                this.logger.warn(`account not found for ${to[0]}`);
+                this.logger.warn(`account not found for ${email}`);
                 return;
             }
+
+            this.logger.info(`account found for ${email}`);
 
             // add inbound message
             await this.updateEntity(ctx, {

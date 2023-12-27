@@ -770,41 +770,38 @@ module.exports = {
 
             this.logger.info(`wrote stream to tmp file ${tmpFile}`);
 
-            // create read stream
-            const readStream = fs.createReadStream(tmpFile)
-
             // get stream hash
             const streamHash = new StreamHash();
 
             streamHash.once('hash', async (hash) => {
                 // update envelope with sourceMd5
                 this.logger.info(`stream hash ${hash.hash} ${hash.bytes}`);
-                envelope = await this.broker.call("v1.emails.inbound.update", {
+                const updated = await this.broker.call("v1.emails.inbound.update", {
                     id: envelope.id,
                     sourceMd5: hash.hash,
                     sourceSize: hash.bytes,
                 });
                 // emit envelope hash event
                 await this.broker.emit('emails.inbound.hash', {
-                    envelope
+                    envelope: updated
                 });
             });
 
-            readStream.pipe(streamHash);
+            fs.createReadStream(tmpFile).pipe(streamHash);
 
             // store stream to s3
-            await this.storeMessageStream(envelope, readStream)
+            await this.storeMessageStream(envelope, fs.createReadStream(tmpFile))
                 .then(async (s3) => {
                     this.logger.info(`stored message stream to s3 ${s3.bucket}/${s3.name}`);
                     if (s3) {
                         // update envelope with source
-                        envelope = await this.broker.call("v1.emails.inbound.update", {
+                        const updated = await this.broker.call("v1.emails.inbound.update", {
                             id: envelope.id,
                             s3
                         });
                         // emit envelope stored event
                         await this.broker.emit('emails.inbound.stored', {
-                            envelope
+                            envelope: updated
                         });
                     }
                     return s3;
@@ -818,13 +815,13 @@ module.exports = {
                     });
                 });
 
-            envelope = await this.broker.call("v1.emails.inbound.get", {
+            const updated = await this.broker.call("v1.emails.inbound.get", {
                 id: session.envelopeID
             });
 
             // emit envelope received event
             await this.broker.emit('emails.inbound.received', {
-                envelope
+                envelope: updated
             });
 
         },

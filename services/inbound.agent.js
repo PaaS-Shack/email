@@ -198,17 +198,30 @@ module.exports = {
          * clean up old envelopes
          * 
          * @actions
+         * @param {Boolean} s3 - has s3 object
          * 
          * @returns {Promise}
          */
         cleanup: {
+            params: {
+                s3: {
+                    type: "boolean",
+                    default: false,
+                    optional: true,
+                },
+            },
             async handler(ctx) {
 
-                const entities = await this.findEntities(null, {
-                    query: {
-                        from: null
-                    }
-                });
+                const query = {
+                    from: null,
+                };
+
+                if (ctx.params.s3) {
+                    query.s3 = null;
+                }
+
+                const entities = await this.findEntities(null, query);
+
                 this.logger.info(`cleaning ${entities.length} entities`);
 
                 for (let index = 0; index < entities.length; index++) {

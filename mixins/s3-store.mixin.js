@@ -18,6 +18,7 @@ const { MoleculerClientError } = require("moleculer").Errors;
 const Minio = require("minio");
 const crypto = require('crypto');
 const { createWriteStream, createReadStream } = require('fs');
+const uuidv4 = require('uuid/v4');
 
 /**
  * maildrop mixin
@@ -61,7 +62,7 @@ module.exports = {
      * Actions
      */
     actions: {
-
+        
     },
 
     /**
@@ -87,7 +88,7 @@ module.exports = {
 
             const id = envelope.id;
             const bucket = this.config['emails.s3.bucket'] || 'emails';
-            const name = `${id}.eml`;
+            const name = `${uuidv4()}.eml`;
 
             const metadata = {
                 'Content-Type': 'message/rfc822',

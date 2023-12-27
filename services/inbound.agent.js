@@ -231,6 +231,8 @@ module.exports = {
                         id: entity.id
                     });
                 }
+
+                return entities.length;
             },
         },
 

@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "address-rfc2822": "^2.1.0",
+    "base32.js": "^0.1.0",
     "config-mixin": "git+https://github.com/FLYBYME/config-mixin.git",
     "cron-mixin": "git+https://github.com/PaaS-Shack/cron-mixin.git",
     "db-mixin": "git+https://github.com/PaaS-Shack/db-mixin.git",

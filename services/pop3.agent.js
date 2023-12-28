@@ -96,14 +96,143 @@ module.exports = {
          */
         capa: {
             params: {
-                args: { type: "array", optional: true },
+                args: { type: "string", optional: true },
                 command: { type: "string", optional: true },
                 line: { type: "string", optional: true },
                 session: { type: "object", optional: true },
             },
             async handler(ctx) {
                 const { args, command, line, session } = ctx.params;
-                return this.onCapa(args, command, line, session);
+                // check args
+                if (args.length) {
+                    throw new MoleculerClientError('Too many arguments for CAPA command', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // extensions to advertise
+                const extensions = [
+                    'TOP',
+                    'PIPELINING',
+                    'UIDL',
+                    'RESP-CODES',
+                ];
+
+                // check auth
+                if (!session.user) {
+                    extensions.push(...[
+                        'USER',
+                        'SASL',
+                        'PLAIN'
+                    ]);
+                }
+
+                // STLS
+                if (!session.secure) {
+                    extensions.push('STLS');
+                }
+
+                // IMPLEMENTATION
+                extensions.push(`IMPLEMENTATION ${this.config['emails.pop3.name']} v${packageData.version}`);
+
+                // return extensions
+                return ['+OK Capability list follows'].concat(extensions);
+            }
+        },
+
+        /**
+         * USER command
+         * 
+         * @actions
+         * @param {Array} args - the arguments
+         * @param {String} command - the command
+         * @param {String} line - the data
+         * @param {Object} session - the session
+         * 
+         * @returns {Promise}
+         */
+        user: {
+            params: {
+                args: { type: "string", optional: true },
+                command: { type: "string", optional: true },
+                line: { type: "string", optional: true },
+                session: { type: "object", optional: true },
+            },
+            async handler(ctx) {
+                const { args, command, line, session } = ctx.params;
+
+                // AUTHORIZATION
+                if (session.state = 'AUTHORIZATION') {
+                    throw new MoleculerClientError('Invalid command', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // check args
+                if (!args.length) {
+                    throw new MoleculerClientError('Missing argument for USER command', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // check auth
+                if (session.username) {
+                    throw new MoleculerClientError('Already authenticated', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // set user
+                session.username = args.toLowerCase();
+
+                // return ok
+                return '+OK send PASS';
+            }
+        },
+
+        /**
+         * PASS command
+         * 
+         * @actions
+         * @param {Array} args - the arguments
+         * @param {String} command - the command
+         * @param {String} line - the data
+         * @param {Object} session - the session
+         * 
+         * @returns {Promise}
+         */
+        pass: {
+            params: {
+                args: { type: "string", optional: true },
+                command: { type: "string", optional: true },
+                line: { type: "string", optional: true },
+                session: { type: "object", optional: true },
+            },
+            async handler(ctx) {
+                const { args, command, line, session } = ctx.params;
+
+                // check args
+                if (!args.length) {
+                    throw new MoleculerClientError('Missing argument for PASS command', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // check auth
+                if (!session.username) {
+                    throw new MoleculerClientError('Missing USER command', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // set password
+                session.password = args;
+
+                // auth user
+                const user = await ctx.call('v1.emails.accounts.auth', {
+                    method: 'PLAIN',
+                    username: session.username,
+                    password: session.password,
+                });
+
+                // check user
+                if (!user) {
+                    throw new MoleculerClientError('Invalid username or password', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // set user
+                session.user = user;
+
+                // return ok
+                return '+OK Logged in';
             }
         },
     },

@@ -6,13 +6,13 @@ const { MoleculerClientError, MoleculerServerError } = require("moleculer").Erro
 
 
 /**
- * This is the service for storing email messages and are associated with a mailbox.
- * 
+ * This service keeps track of email addresses.  It is used to prevent spamming and
+ * to keep track of who is sending emails.
  */
 
 module.exports = {
     // name of service
-    name: "emails.messages",
+    name: "emails.addresses",
     // version of service
     version: 2,
 
@@ -45,25 +45,61 @@ module.exports = {
 
         fields: {
 
-            // email message mailbox id
-            mailbox: {
+            // email address name
+            name: {
                 type: "string",
-                required: true,
-                populate: {
-                    action: "v2.emails.mailboxes.get",
-                }
+                required: false,
             },
 
-            // email message envelope id
-            envelope: {
+            // email address
+            address: {
                 type: "string",
                 required: true,
-                populate: {
-                    action: "v2.emails.envelopes.get",
-                }
             },
 
-            // email message flags
+            // email address description
+            description: {
+                type: "string",
+                required: false,
+            },
+
+            // email address status
+            status: {
+                type: "string",
+                required: true,
+                default: "active",
+                enum: [
+                    "active",
+                    "inactive",
+                    "banned",
+                ]
+            },
+
+            // first seen date
+            firstSeen: {
+                type: "number",
+                required: false,
+                readonly: true,
+                default: Date.now,
+            },
+
+            // last seen date
+            lastSeen: {
+                type: "number",
+                required: false,
+                readonly: true,
+                default: Date.now,
+            },
+
+            // email address tags
+            tags: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+            },
+
+            // email address flags
             flags: {
                 type: "array",
                 required: false,
@@ -71,68 +107,40 @@ module.exports = {
                 items: "string",
             },
 
-            // email message subject
-            subject: {
-                type: "string",
-                required: false,
-            },
-
-            // email message from
-            from: {
+            // email address messages
+            messages: {
                 type: "array",
                 required: false,
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.messages.get",
                 }
             },
 
-            // email message to
-            to: {
+            // email address mailboxes
+            mailboxes: {
                 type: "array",
                 required: false,
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.mailboxes.get",
                 }
             },
 
-            // email message cc
-            cc: {
+            // email address accounts
+            accounts: {
                 type: "array",
                 required: false,
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.accounts.get",
                 }
             },
 
-            // email message bcc
-            bcc: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
-                populate: {
-                    action: "v2.emails.addresses.get",
-                }
-            },
-
-            // email message reply to
-            replyTo: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
-                populate: {
-                    action: "v2.emails.addresses.get",
-                }
-            },
-
-            // email message attachments
+            // email address attachments
             attachments: {
                 type: "array",
                 required: false,
@@ -143,7 +151,29 @@ module.exports = {
                 }
             },
 
+            // email address contacts
+            contacts: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.contacts.get",
+                }
+            },
 
+            // email address envelopes
+            envelopes: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.envelopes.get",
+                }
+            },
+
+            
 
 
 

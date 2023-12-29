@@ -6,12 +6,13 @@ const { MoleculerClientError, MoleculerServerError } = require("moleculer").Erro
 
 
 /**
- * this is the email account service
+ * This is the service for storing email attachments.
+ * When a new email is received, the attachments are stored in s3 and the metadata is stored in this service
  */
 
 module.exports = {
     // name of service
-    name: "emails.accounts",
+    name: "emails.attachments",
     // version of service
     version: 2,
 
@@ -44,64 +45,51 @@ module.exports = {
 
         fields: {
 
-            // email account name
-            name: {
+            // email attachment envelope id
+            envelope: {
                 type: "string",
                 required: true,
-                min: 3,
-                max: 25,
-                trim: true,
-            },
-
-            // email account description
-            description: {
-                type: "string",
-                required: false,
-            },
-
-            // username for email account
-            username: {
-                type: "string",
-                required: true,
-                min: 3,
-                max: 25,
-                trim: true,
-            },
-
-            // password for email account
-            password: {
-                type: "string",
-                required: true,
-                readonly: true,
-                hidden: true,
-            },
-
-            // account tags
-            tags: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
-            },
-
-            // account status
-            status: {
-                type: "string",
-                required: false,
-                default: "active",
-                enum: ["active", "inactive", "disabled"],
-            },
-
-            // account mailboxs
-            mailboxes: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
                 populate: {
-                    action: "v1.emails.mailboxes.get",
+                    action: "v2.emails.envelopes.get",
                 }
             },
+
+            // email attachment name
+            name: {
+                type: "string",
+                required: true
+            },
+
+            // email attachment size
+            size: {
+                type: "number",
+                required: true
+            },
+
+            // email attachment mime type
+            mime: {
+                type: "string",
+                required: true
+            },
+
+            // email attachment hash
+            hash: {
+                type: "string",
+                required: true
+            },
+
+            // email attachment s3 key
+            key: {
+                type: "string",
+                required: true
+            },
+
+            // email attachment s3 bucket
+            bucket: {
+                type: "string",
+                required: true
+            },
+
 
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -118,9 +106,7 @@ module.exports = {
 
         // default init config settings
         config: {
-            "emails.accounts.passwordHash": "sha256",
-            "emails.accounts.passwordSalt": "salt",
-            "emails.accounts.passwordIterations": 10000,
+
         }
     },
 
@@ -128,14 +114,14 @@ module.exports = {
      * service actions
      */
     actions: {
-
+        
     },
 
     /**
      * service events
      */
     events: {
-
+       
     },
 
     /**

@@ -64,6 +64,28 @@ module.exports = {
                 required: false,
             },
 
+            // mailbox email address
+            email: {
+                type: "string",
+                required: true,
+                readonly: true,
+                populate: {
+                    action: "v2.emails.addresses.get",
+                }
+            },
+
+            // mailbox email aliases
+            alias: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.addresses.get",
+                }
+            },
+            
+
             // mailbox flags
             flags: {
                 type: "array",

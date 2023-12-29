@@ -6,13 +6,12 @@ const { MoleculerClientError, MoleculerServerError } = require("moleculer").Erro
 
 
 /**
- * This is the envelope service for long term storage of emails
- * Raw emails are stored in s3 and the envelope is stored in this service
+ * This service keeps track of email inbound smtp sessions.  It is used to prevent spamming.
  */
 
 module.exports = {
     // name of service
-    name: "emails.envelopes",
+    name: "emails.sessions",
     // version of service
     version: 2,
 
@@ -45,6 +44,53 @@ module.exports = {
 
         fields: {
 
+            // session localAddress
+            localAddress: {
+                type: "string",
+                required: true,
+            },
+
+            // session localPort
+            localPort: {
+                type: "number",
+                required: true,
+            },
+
+            // session remoteAddress
+            remoteAddress: {
+                type: "string",
+                required: true,
+            },
+
+            // session remotePort
+            remotePort: {
+                type: "number",
+                required: true,
+            },
+
+            // session clientHostname
+            clientHostname: {
+                type: "string",
+                required: false,
+            },
+
+            // session hostNameAppearsAs
+            hostNameAppearsAs: {
+                type: "string",
+                required: false,
+            },
+
+            // session openingCommand
+            openingCommand: {
+                type: "string",
+                required: false,
+            },
+
+            // session transmissionType
+            transmissionType: {
+                type: "string",
+                required: false,
+            },
 
             ...DbService.FIELDS,// inject dbservice fields
         },

@@ -144,8 +144,75 @@ module.exports = {
             },
 
 
+            // message is unread
+            unread: {
+                type: "boolean",
+                required: false,
+                default: true,
+            },
 
+            // message is flagged
+            flagged: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
 
+            // message is answered
+            answered: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // message is draft
+            draft: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // message is deleted
+            deleted: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // message is seen
+            seen: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // message is sent
+            sent: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // message is received
+            received: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // message is recent
+            recent: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // message is junk
+            junk: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
 
 
             ...DbService.FIELDS,// inject dbservice fields

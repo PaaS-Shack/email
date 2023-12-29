@@ -6,13 +6,17 @@ const { MoleculerClientError, MoleculerServerError } = require("moleculer").Erro
 
 
 /**
- * This is the service for storing email messages and are associated with a mailbox.
+ * This is a in bound smtp agent.  It is used to receive emails from the internet
+ * and store them in the s3 bucket for processing. 
+ * 
+ * For every new connection, a emails.smtp session is created. 
+ * Session details will be used by other services for processing.
  * 
  */
 
 module.exports = {
     // name of service
-    name: "emails.messages",
+    name: "emails.smtp",
     // version of service
     version: 2,
 

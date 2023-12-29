@@ -6,13 +6,13 @@ const { MoleculerClientError, MoleculerServerError } = require("moleculer").Erro
 
 
 /**
- * This is the service for storing email messages and are associated with a mailbox.
- * 
+ * This is the envelope service for long term storage of emails
+ * Raw emails are stored in s3 and the envelope is stored in this service
  */
 
 module.exports = {
     // name of service
-    name: "emails.messages",
+    name: "emails.envelopes",
     // version of service
     version: 2,
 

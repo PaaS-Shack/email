@@ -6,13 +6,14 @@ const { MoleculerClientError, MoleculerServerError } = require("moleculer").Erro
 
 
 /**
- * This is the service for storing email messages and are associated with a mailbox.
- * 
+ * This agent is used to send emails to the internet.
+ * Emails are signed with dkim and sent to the internet via smtp.
+ * We keep connection pools open to smtp servers for faster sending.
  */
 
 module.exports = {
     // name of service
-    name: "emails.messages",
+    name: "emails.mta",// mail transfer agent
     // version of service
     version: 2,
 

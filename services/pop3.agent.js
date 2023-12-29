@@ -90,7 +90,7 @@ module.exports = {
          * @param {Array} args - the arguments
          * @param {String} command - the command
          * @param {String} line - the data
-         * @param {Object} session - the session
+         * @param {String} session - the session id
          * 
          * @returns {Promise}
          */
@@ -99,13 +99,20 @@ module.exports = {
                 args: { type: "string", optional: true },
                 command: { type: "string", optional: true },
                 line: { type: "string", optional: true },
-                session: { type: "object", optional: true },
+                session: { type: "string", optional: true },
             },
             async handler(ctx) {
-                const { args, command, line, session } = ctx.params;
+                const { args, command, line, session: id } = ctx.params;
                 // check args
                 if (args.length) {
                     throw new MoleculerClientError('Too many arguments for CAPA command', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
+                // get session
+                const session = this.getSession(id);
+                // check session
+                if (!session) {
+                    throw new MoleculerClientError('Invalid session', 501, 'ERR_INVALID_ARG_VALUE');
                 }
 
                 // extensions to advertise
@@ -145,7 +152,7 @@ module.exports = {
          * @param {Array} args - the arguments
          * @param {String} command - the command
          * @param {String} line - the data
-         * @param {Object} session - the session
+         * @param {string} session - the session id
          * 
          * @returns {Promise}
          */
@@ -154,10 +161,17 @@ module.exports = {
                 args: { type: "string", optional: true },
                 command: { type: "string", optional: true },
                 line: { type: "string", optional: true },
-                session: { type: "object", optional: true },
+                session: { type: "string", optional: true },
             },
             async handler(ctx) {
-                const { args, command, line, session } = ctx.params;
+                const { args, command, line, session: id } = ctx.params;
+
+                // get session
+                const session = this.getSession(id);
+                // check session
+                if (!session) {
+                    throw new MoleculerClientError('Invalid session', 501, 'ERR_INVALID_ARG_VALUE');
+                }
 
                 // AUTHORIZATION
                 if (session.state = 'AUTHORIZATION') {
@@ -189,7 +203,7 @@ module.exports = {
          * @param {Array} args - the arguments
          * @param {String} command - the command
          * @param {String} line - the data
-         * @param {Object} session - the session
+         * @param {string} session - the session id
          * 
          * @returns {Promise}
          */
@@ -198,15 +212,23 @@ module.exports = {
                 args: { type: "string", optional: true },
                 command: { type: "string", optional: true },
                 line: { type: "string", optional: true },
-                session: { type: "object", optional: true },
+                session: { type: "string", optional: true },
             },
             async handler(ctx) {
-                const { args, command, line, session } = ctx.params;
+                const { args, command, line, session: id } = ctx.params;
 
                 // check args
                 if (!args.length) {
                     throw new MoleculerClientError('Missing argument for PASS command', 501, 'ERR_INVALID_ARG_VALUE');
                 }
+
+                // get session
+                const session = this.getSession(id);
+                // check session
+                if (!session) {
+                    throw new MoleculerClientError('Invalid session', 501, 'ERR_INVALID_ARG_VALUE');
+                }
+
 
                 // check auth
                 if (!session.username) {
@@ -539,6 +561,23 @@ module.exports = {
             });
             connection.init();
         },
+
+        /**
+         * get session by connections id
+         * 
+         * @param {String} id - the connection id
+         * 
+         * @returns {Object}
+         */
+        getSession(id) {
+            // loop over connections
+            for (let connection of this.connections) {
+                if (connection.id === id) {
+                    return connection.session;
+                }
+            }
+        },
+
 
         /**
          * on error

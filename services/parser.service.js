@@ -83,6 +83,82 @@ module.exports = {
      */
     actions: {
         /**
+         * get basic info about email message
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * 
+         * @returns {Object} - basic info about email message
+         */
+        info: {
+            rest: {
+                method: "GET",
+                path: "/:id/info",
+            },
+            params: {
+                id: { type: "string" },
+            },
+            async handler(ctx) {
+                const id = ctx.params.id;
+
+                // check if id is valid
+                if (!id) {
+                    throw new MoleculerClientError("Invalid envelope id", 400, "INVALID_ENVELOPE_ID");
+                }
+
+                // get message stream
+                const stream = await this.getMessageStream({
+                    id,
+                });
+
+                const parsed = await simpleParser(stream);
+
+                const info = {
+                    id,
+                    subject: parsed.subject,
+                    from: parsed.from,
+                    to: parsed.to,
+                    date: parsed.date,
+                };
+
+                return info;
+            }
+        },
+        /**
+         * get email message headers
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * 
+         * @returns {Object} - email message headers
+         */
+        headers: {
+            rest: {
+                method: "GET",
+                path: "/:id/headers",
+            },
+            params: {
+                id: { type: "string" },
+            },
+            async handler(ctx) {
+                const id = ctx.params.id;
+
+                // check if id is valid
+                if (!id) {
+                    throw new MoleculerClientError("Invalid envelope id", 400, "INVALID_ENVELOPE_ID");
+                }
+
+                // get message stream
+                const stream = await this.getMessageStream({
+                    id,
+                });
+
+                const parsed = await simpleParser(stream);
+
+                return parsed.headers;
+            }
+        },
+        /**
          * parse email message
          * 
          * @actions

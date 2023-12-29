@@ -151,6 +151,41 @@ module.exports = {
      * service actions
      */
     actions: {
+        /**
+         * create default mailbox
+         * 
+         * @actions
+         * @param {String} account - the account id
+         * 
+         * @returns {Object} - the created mailbox
+         */
+        createDefault: {
+            params: {
+                account: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                const { account } = ctx.params;
+
+                const found = await this.resolveMailbox(ctx, "INBOX", account);
+
+                if (found) {
+                    return found;
+                }
+
+                const mailbox = await this.createEntity(ctx, {
+                    name: "INBOX",
+                    description: "Default mailbox",
+                    type: "inbox",
+                    flags: ["\\Inbox"],
+                    account,
+                });
+
+                return mailbox;
+            }
+        },
 
     },
 
@@ -164,11 +199,7 @@ module.exports = {
         async "emails.accounts.created"(ctx) {
             const account = ctx.params.data;
 
-            const mailbox = await this.createEntity(ctx, {
-                name: "INBOX",
-                description: "Default mailbox",
-                type: "inbox",
-                flags: ["\\Inbox"],
+            const mailbox = await this.actions.createDefault({
                 account: account.id,
             });
 

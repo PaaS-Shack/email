@@ -216,7 +216,29 @@ module.exports = {
      * service actions
      */
     actions: {
+        /**
+         * lookup email address
+         * 
+         * @actions
+         * @param {String} address - email address
+         * 
+         * @returns {Object} email address
+         */
+        lookup: {
+            params: {
+                address: {
+                    type: "string",
+                    required: true,
+                },
+            },
+            async handler(ctx) {
+                // get address
+                const address = await this.lookup(ctx.params.address);
 
+                // return address
+                return address;
+            }
+        }
     },
 
     /**
@@ -230,8 +252,32 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * lookup email address
+         * 
+         * @param {Context} ctx - context
+         * @param {String} address - email address
+         * 
+         * @returns {Object} email address
+         */
+        async lookup(ctx, address) {
+            // find email address
+            const result = await this.findEntity(null, {
+                query: { address: address, }
+            });
 
-    }
+            // check result
+            if (!result) {
+               // create email address
+                return this.createEntity(ctx, {
+                     address: address,
+                });
+            }
+
+            // return result
+            return result;
+        }
+    },
 
 }
 

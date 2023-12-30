@@ -241,11 +241,7 @@ module.exports = {
                 },
             },
             async handler(ctx) {
-                let session = await this.lookupSession(ctx.params);
-                if (!session) {
-                    session = await this.createSession(ctx.params);
-                }
-                return session;
+                return this.lookupSession(ctx.params);
             }
         }
     },
@@ -360,10 +356,10 @@ module.exports = {
             const addresses = await ctx.call("v1.utils.dns.resolve", {
                 host,
             })
-            .catch((err) => {
-                // return host
-                return [];
-            });
+                .catch((err) => {
+                    // return host
+                    return [];
+                });
 
             // return first address
             return addresses[0];
@@ -382,16 +378,14 @@ module.exports = {
             const hostnames = await ctx.call("v1.utils.dns.reverse", {
                 ip,
             })
-            .catch((err) => {
-                // return address
-                return [];
-            });
+                .catch((err) => {
+                    // return address
+                    return [];
+                });
 
             // return first hostname
             return hostnames[0];
         },
-
-
     }
 };
 

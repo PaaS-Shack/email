@@ -61,6 +61,12 @@ module.exports = {
                 }
             },
 
+            // email blacklist reason
+            reason: {
+                type: "string",
+                required: false,
+            },
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],
@@ -90,7 +96,7 @@ module.exports = {
      * service events
      */
     events: {
-       
+
     },
 
     /**

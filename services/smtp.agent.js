@@ -471,14 +471,10 @@ module.exports = {
         async onConnect(session, callback) {
 
             const sessionObject = await this.broker.call("v2.emails.sessions.lookup", {
-                localAddress: session.localAddress,
-                localPort: session.localPort,
                 remoteAddress: session.remoteAddress,
-                remotePort: session.remotePort,
                 clientHostname: session.clientHostname,
                 hostNameAppearsAs: session.hostNameAppearsAs,
                 openingCommand: session.openingCommand,
-                transmissionType: session.transmissionType,
             });
 
             // check sessionObject is valid

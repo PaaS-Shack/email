@@ -194,6 +194,12 @@ module.exports = {
                 default: false,
             },
 
+            // address reason
+            reason: {
+                type: "string",
+                required: false,
+            },
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],
@@ -232,11 +238,7 @@ module.exports = {
                 },
             },
             async handler(ctx) {
-                // get address
-                const address = await this.lookup(ctx.params.address);
-
-                // return address
-                return address;
+                return this.lookup(ctx.params.address);
             }
         }
     },
@@ -268,10 +270,24 @@ module.exports = {
 
             // check result
             if (!result) {
-               // create email address
-                return this.createEntity(ctx, {
-                     address: address,
+                // lookup email address in blacklists service
+                const blacklist = await ctx.call("v2.emails.blacklists.lookupEmail", {
+                    address: address,
                 });
+
+                // check blacklist
+                if (blacklist) {
+                    // create email address entity in database from address and block it.
+                    const result = await this.createEntity(ctx, {
+                        name: blacklist.name,
+                        address: address,
+                        status: "banned",
+                        blocked: true,
+                        reason: blacklist.reason,
+                    });
+
+                    return result;
+                }
             }
 
             // return result

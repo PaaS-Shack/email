@@ -4,6 +4,7 @@ const ConfigLoader = require("config-mixin");
 
 const { MoleculerClientError, MoleculerServerError } = require("moleculer").Errors;
 
+const pls = require("../lib/psl.min.js");
 
 /**
  * This service keeps track of email blacklists entities.
@@ -45,6 +46,15 @@ module.exports = {
         rest: true,
 
         fields: {
+
+            // blacklist id
+            blacklist: {
+                type: "string",
+                required: true,
+                populate: {
+                    action: "v2.emails.blacklists.get"
+                }
+            },
 
             // email blacklist name
             name: {
@@ -114,6 +124,26 @@ module.exports = {
             },
 
 
+            // session valid
+            valid: {
+                type: "boolean",
+                required: false,
+                default: true,
+            },
+
+            // session active
+            active: {
+                type: "boolean",
+                required: false,
+                default: true,
+            },
+
+            // session blocked
+            blocked: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
 
             // blacklist reason
             reason: {
@@ -143,7 +173,113 @@ module.exports = {
      * service actions
      */
     actions: {
+        /**
+                 * lookup email address in blacklists
+                 * Break address into parts and lookup each part in blacklists
+                 * Test parts of the domain as wildcards to see if any part of the domain is blacklisted
+                 * 
+                 * @actions
+                 * @param {String} address - email address
+                 * 
+                 * @returns {Object} - email blacklist
+                 */
+        lookupEmail: {
+            params: {
+                address: {
+                    type: "string",
+                    required: true,
+                }
+            },
+            async handler(ctx) {
+                const email = ctx.params.address;
+                const parts = email.split("@");
+                const user = parts[0];
+                const hostname = parts[1];
 
+                // parse domain
+                const parsed = pls.parse(hostname);
+                const domain = parsed.domain;
+
+                // lookup email address in entites
+                const query = {
+                    $or: [
+                        { email: email },
+                        { email: `*@${hostname}` },
+                        { email: `${user}@*` },
+                        { domain: domain },
+                    ]
+                };
+
+                const entites = await this.findEntities(null, {
+                    query,
+                    limit: 1,
+                    populate: "blacklist"
+                }, { raw: true });
+
+                return {
+                    email,
+                    domain,
+                    user,
+                    ...entites[0],
+                }
+            }
+        },
+
+        /**
+         * lookup domain in blacklists
+         * 
+         * @actions
+         * @param {String} domain - email domain
+         * 
+         * @returns {Object} - email blacklist
+         */
+        lookupDomain: {
+            params: {
+                domain: {
+                    type: "string",
+                    required: true,
+                }
+            },
+            async handler(ctx) {
+                // lookup email domain in entites
+                return ctx.call("v2.emails.blacklists.entities.find", {
+                    query: {
+                        domain: ctx.params.domain,
+                    },
+                    limit: 1
+                }).then((entities) => {
+                    return entities[0];
+                });
+            }
+        },
+
+        /**
+         * lookup ip address in blacklists
+         * 
+         * @actions
+         * @param {String} ip - ip address
+         * 
+         * @returns {Object} - email blacklist
+         */
+        lookupIp: {
+            params: {
+                ip: {
+                    type: "string",
+                    required: true,
+                }
+            },
+            async handler(ctx) {
+                // lookup ip address in entites
+                return ctx.call("v2.emails.blacklists.entities.find", {
+                    query: {
+                        ip: ctx.params.ip,
+                    },
+                    limit: 1
+                }).then((entities) => {
+                    return entities[0];
+                });
+            }
+        },
     },
 
     /**

@@ -125,45 +125,6 @@ module.exports = {
                 }
             },
 
-            // session valid
-            valid: {
-                type: "boolean",
-                required: false,
-                default: true,
-            },
-
-            // session valid message
-            validMessage: {
-                type: "string",
-                required: false,
-            },
-
-            // session active
-            active: {
-                type: "boolean",
-                required: false,
-                default: true,
-            },
-
-            // session active message
-            activeMessage: {
-                type: "string",
-                required: false,
-            },
-
-            // session blocked
-            blocked: {
-                type: "boolean",
-                required: false,
-                default: false,
-            },
-
-            // session blocked message
-            blockedMessage: {
-                type: "string",
-                required: false,
-            },
-
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],
@@ -187,45 +148,25 @@ module.exports = {
      */
     actions: {
         /**
-         * lookup session, if not found create it
+         * lookup session by params and validate, if not found create it
          * 
          * @actions
-         * @param {String} localAddress - local address
-         * @param {Number} localPort - local port
          * @param {String} remoteAddress - remote address
-         * @param {Number} remotePort - remote port
          * @param {String} clientHostname - client hostname
          * @param {String} hostNameAppearsAs - hostname appears as
          * @param {String} openingCommand - opening command
-         * @param {String} transmissionType - transmission type
          * 
          * @returns {Object} session - session object
          */
-        lookup: {
-            rest: {
-                method: "POST",
-                path: "/lookup",
-            },
+        lookupSession: {
             params: {
-                localAddress: {
-                    type: "string",
-                    required: true,
-                },
-                localPort: {
-                    type: "number",
-                    required: true,
-                },
                 remoteAddress: {
                     type: "string",
                     required: true,
                 },
-                remotePort: {
-                    type: "number",
-                    required: true,
-                },
                 clientHostname: {
                     type: "string",
-                    required: false,
+                    required: true,
                 },
                 hostNameAppearsAs: {
                     type: "string",
@@ -235,15 +176,15 @@ module.exports = {
                     type: "string",
                     required: false,
                 },
-                transmissionType: {
-                    type: "string",
-                    required: false,
-                },
             },
             async handler(ctx) {
-                return this.lookupSession(ctx.params);
+                // lookup session
+                const session = await this.lookupSession(ctx, ctx.params);
+
+                // return session
+                return session;
             }
-        }
+        },
     },
 
     /**
@@ -318,6 +259,22 @@ module.exports = {
                     ...params,
                     blocked: true,
                     blockedMessage: session.blockedMessage,
+                });
+            }
+
+            // lookup session in blacklists service
+            const blacklist = await ctx.call("v2.emails.blacklists.lookupSession", {
+                remoteAddress: remoteAddress,
+                clientHostname: clientHostname
+            });
+
+            // check blacklist
+            if (blacklist) {
+                // create new session and block it
+                return this.createSession(ctx, {
+                    ...params,
+                    blocked: true,
+                    blockedMessage: blacklist.reason,
                 });
             }
 

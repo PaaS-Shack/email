@@ -173,10 +173,26 @@ module.exports = {
                 }
             },
 
-            
+            // address valid
+            valid: {
+                type: "boolean",
+                required: false,
+                default: true,
+            },
 
+            // address active
+            active: {
+                type: "boolean",
+                required: false,
+                default: true,
+            },
 
-
+            // address blocked
+            blocked: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
 
             ...DbService.FIELDS,// inject dbservice fields
         },

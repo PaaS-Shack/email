@@ -62,7 +62,7 @@ module.exports = {
      * Actions
      */
     actions: {
-        
+
     },
 
     /**
@@ -79,14 +79,11 @@ module.exports = {
         /**
          * store message stream in s3
          * 
-         * @param {Object} envelope - message envelope
          * @param {ReadableStream} stream - message stream
          * 
          * @returns {Promise} - resolves to s3 object
          */
-        storeMessageStream(envelope, stream) {
-
-            const id = envelope.id;
+        storeMessageStream(stream) {
             const bucket = this.config['emails.s3.bucket'] || 'emails';
             const name = `${uuidv4()}.eml`;
 

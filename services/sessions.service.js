@@ -92,6 +92,60 @@ module.exports = {
                 required: false,
             },
 
+            // session valid
+            valid: {
+                type: "boolean",
+                required: false,
+                default: true,
+            },
+
+            // session active
+            active: {
+                type: "boolean",
+                required: false,
+                default: true,
+            },
+
+            // session blocked
+            blocked: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
+            // session from addresses
+            from: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.addresses.get",
+                }
+            },
+
+            // session to addresses
+            to: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.addresses.get",
+                }
+            },
+
+            // session envelopes
+            envelopes: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.envelopes.get",
+                }
+            },
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],

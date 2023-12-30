@@ -125,6 +125,17 @@ module.exports = {
                 }
             },
 
+            // session blacklist entities
+            blacklists: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.blacklists.get",
+                }
+            },
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],
@@ -147,44 +158,7 @@ module.exports = {
      * service actions
      */
     actions: {
-        /**
-         * lookup session by params and validate, if not found create it
-         * 
-         * @actions
-         * @param {String} remoteAddress - remote address
-         * @param {String} clientHostname - client hostname
-         * @param {String} hostNameAppearsAs - hostname appears as
-         * @param {String} openingCommand - opening command
-         * 
-         * @returns {Object} session - session object
-         */
-        lookupSession: {
-            params: {
-                remoteAddress: {
-                    type: "string",
-                    required: true,
-                },
-                clientHostname: {
-                    type: "string",
-                    required: true,
-                },
-                hostNameAppearsAs: {
-                    type: "string",
-                    required: false,
-                },
-                openingCommand: {
-                    type: "string",
-                    required: false,
-                },
-            },
-            async handler(ctx) {
-                // lookup session
-                const session = await this.lookupSession(ctx, ctx.params);
-
-                // return session
-                return session;
-            }
-        },
+        
     },
 
     /**
@@ -198,89 +172,7 @@ module.exports = {
      * service methods
      */
     methods: {
-        /**
-         * lookup session by params and validate, if not found create it
-         * 
-         * @param {Object} ctx - context
-         * @param {Object} params - lookup params
-         * 
-         * @returns {Object} session - session object
-         */
-        async lookupSession(ctx, params) {
-            // resolve clientHostname
-            const remoteAddress = await this.resolveDNS(ctx, params.clientHostname);
-            // reverse dns lookup
-            const clientHostname = await this.reverseDNS(ctx, params.remoteAddress);
-
-            // check client hostname match
-            if (params.clientHostname !== clientHostname) {
-                // create new session and block it
-                return this.createSession(ctx, {
-                    ...params,
-                    blocked: true,
-                    blockedMessage: "Invalid client hostname",
-                });
-            }
-
-            // check remote address match
-            if (params.remoteAddress !== remoteAddress) {
-                // create new session and block it
-                return this.createSession(ctx, {
-                    ...params,
-                    blocked: true,
-                    blockedMessage: "Invalid remote address",
-                });
-            }
-
-            // lookup session
-            const session = await this.findEntity(null, {
-                query: {
-                    localAddress: params.localAddress,
-                    localPort: params.localPort,
-                    remoteAddress: params.remoteAddress,
-                    remotePort: params.remotePort,
-                }
-            });
-
-            // validate session
-            if (session && !session.valid) {
-                // create new session and block it
-                return this.createSession(ctx, {
-                    ...params,
-                    blocked: true,
-                    blockedMessage: session.validMessage,
-                });
-            }
-
-            // block session
-            if (session && session.blocked) {
-                // create new session and block it
-                return this.createSession(ctx, {
-                    ...params,
-                    blocked: true,
-                    blockedMessage: session.blockedMessage,
-                });
-            }
-
-            // lookup session in blacklists service
-            const blacklist = await ctx.call("v2.emails.blacklists.lookupSession", {
-                remoteAddress: remoteAddress,
-                clientHostname: clientHostname
-            });
-
-            // check blacklist
-            if (blacklist) {
-                // create new session and block it
-                return this.createSession(ctx, {
-                    ...params,
-                    blocked: true,
-                    blockedMessage: blacklist.reason,
-                });
-            }
-
-            // return new session
-            return this.createSession(ctx, params);
-        },
+        
 
         /**
          * create session

@@ -311,19 +311,27 @@ module.exports = {
             // add address to session 
             session.from = addressObject.id;
 
-            // check addressObject is valid
-            if (!addressObject.valid) {
-                return callback(new Error('invalid address'));
-            }
+            // check blacklist is enabled
+            if (this.config["emails.smtp.blacklist"]) {
+                // lookup address
+                const blacklist = await this.broker.call("v2.emails.blacklists.address", {
+                    address: addressObject.id,
+                });
 
-            // check addressObject is active
-            if (!addressObject.active) {
-                return callback(new Error('inactive address'));
-            }
+                // check addressObject is valid
+                if (!blacklist.valid) {
+                    return callback(new Error('invalid address'));
+                }
 
-            // check addressObject is not blocked
-            if (addressObject.blocked) {
-                return callback(new Error('blocked address'));
+                // check addressObject is active
+                if (!blacklist.active) {
+                    return callback(new Error('inactive address'));
+                }
+
+                // check addressObject is not blocked
+                if (blacklist.blocked) {
+                    return callback(new Error('blocked address'));
+                }
             }
 
             // callback with null
@@ -360,19 +368,27 @@ module.exports = {
             // add address to session
             session.to.push(addressObject.id);
 
-            // check addressObject is valid
-            if (!addressObject.valid) {
-                return callback(new Error('invalid address'));
-            }
+            // check blacklist is enabled
+            if (this.config["emails.smtp.blacklist"]) {
+                // lookup address
+                const blacklist = await this.broker.call("v2.emails.blacklists.address", {
+                    address: addressObject.id,
+                });
 
-            // check addressObject is active
-            if (!addressObject.active) {
-                return callback(new Error('inactive address'));
-            }
+                // check addressObject is valid
+                if (!blacklist.valid) {
+                    return callback(new Error('invalid address'));
+                }
 
-            // check addressObject is not blocked
-            if (addressObject.blocked) {
-                return callback(new Error('blocked address'));
+                // check addressObject is active
+                if (!blacklist.active) {
+                    return callback(new Error('inactive address'));
+                }
+
+                // check addressObject is not blocked
+                if (blacklist.blocked) {
+                    return callback(new Error('blocked address'));
+                }
             }
 
             // callback with null
@@ -437,6 +453,30 @@ module.exports = {
             session.from = null;
             session.to = [];
 
+            // check blacklist is enabled
+            if (this.config["emails.smtp.blacklist"]) {
+                // lookup envelope
+                const blacklist = await this.broker.call("v2.emails.blacklists.envelope", {
+                    envelope: envelope.id,
+                });
+
+                // check envelope is valid
+                if (!blacklist.valid) {
+                    return callback(new Error('invalid envelope'));
+                }
+
+                // check envelope is active
+                if (!blacklist.active) {
+                    return callback(new Error('inactive envelope'));
+                }
+
+                // check envelope is not blocked
+                if (blacklist.blocked) {
+                    return callback(new Error('blocked envelope'));
+                }
+            }
+
+
             // callback with null
             callback(null);
         },
@@ -470,27 +510,15 @@ module.exports = {
          */
         async onConnect(session, callback) {
 
-            const sessionObject = await this.broker.call("v2.emails.sessions.lookup", {
+            const sessionObject = await this.broker.call("v2.emails.sessions.create", {
+                localAddress: session.localAddress,
+                localPort: session.localPort,
                 remoteAddress: session.remoteAddress,
+                remotePort: session.remotePort,
                 clientHostname: session.clientHostname,
                 hostNameAppearsAs: session.hostNameAppearsAs,
                 openingCommand: session.openingCommand,
             });
-
-            // check sessionObject is valid
-            if (!sessionObject.valid) {
-                return callback(new Error('invalid session'));
-            }
-
-            // check sessionObject is active
-            if (!sessionObject.active) {
-                return callback(new Error('inactive session'));
-            }
-
-            // check sessionObject is not blocked
-            if (sessionObject.blocked) {
-                return callback(new Error('blocked session'));
-            }
 
             // add sessionID to session object
             session.sessionID = sessionObject.id;
@@ -502,6 +530,27 @@ module.exports = {
             // add session to session map
             this.sessionMap.set(session.sessionID, session);
 
+            if (this.config["emails.smtp.blacklist"]) {
+                // lookup session
+                const blacklist = await this.broker.call("v2.emails.blacklists.session", {
+                    session: sessionObject.id,
+                });
+
+                // check sessionObject is valid
+                if (!blacklist.valid) {
+                    return callback(new Error('invalid session'));
+                }
+
+                // check sessionObject is active
+                if (!blacklist.active) {
+                    return callback(new Error('inactive session'));
+                }
+
+                // check sessionObject is not blocked
+                if (blacklist.blocked) {
+                    return callback(new Error('blocked session'));
+                }
+            }
 
             // callback with null
             callback(null);

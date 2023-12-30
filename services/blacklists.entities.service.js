@@ -61,6 +61,7 @@ module.exports = {
                 type: "string",
                 required: false,
             },
+            
 
             // entity type (address, domain, ip)
             type: {
@@ -113,12 +114,18 @@ module.exports = {
                     high: {
                         type: "number",
                         required: false,
+                        set: function ({ params }) {
+                            if (params.ip && !params.ip.high) return this.ip2int(params.ip.address)
+                        },
                     },
 
                     // blacklist ip low range
                     low: {
                         type: "number",
                         required: false,
+                        set: function ({ params }) {
+                            if (params.ip && !params.ip.low) return this.ip2int(params.ip.address)
+                        },
                     },
                 }
             },
@@ -142,13 +149,14 @@ module.exports = {
             blocked: {
                 type: "boolean",
                 required: false,
-                default: false,
+                default: true,
             },
 
             // blacklist reason
             reason: {
                 type: "string",
                 required: false,
+                default: "unknown",
             },
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -210,18 +218,12 @@ module.exports = {
                     ]
                 };
 
-                const entites = await this.findEntities(null, {
+                const entity = await this.findEntity(null, {
                     query,
-                    limit: 1,
                     populate: "blacklist"
                 }, { raw: true });
 
-                return {
-                    email,
-                    domain,
-                    user,
-                    ...entites[0],
-                }
+                return entity;
             }
         },
 
@@ -241,15 +243,27 @@ module.exports = {
                 }
             },
             async handler(ctx) {
-                // lookup email domain in entites
-                return ctx.call("v2.emails.blacklists.entities.find", {
-                    query: {
-                        domain: ctx.params.domain,
-                    },
-                    limit: 1
-                }).then((entities) => {
-                    return entities[0];
-                });
+                const domain = ctx.params.domain;
+
+                // parse domain
+                const parsed = pls.parse(domain);
+                const hostname = parsed.domain;
+
+                // query for domain
+                const query = {
+                    $or: [
+                        { domain: domain },
+                        { domain: hostname },
+                    ]
+                };
+
+                // lookup domain in entites
+                const entity = await this.findEntity(null, {
+                    query,
+                    populate: "blacklist"
+                }, { raw: true });
+
+                return entity;
             }
         },
 
@@ -269,15 +283,42 @@ module.exports = {
                 }
             },
             async handler(ctx) {
-                // lookup ip address in entites
-                return ctx.call("v2.emails.blacklists.entities.find", {
-                    query: {
-                        ip: ctx.params.ip,
-                    },
-                    limit: 1
-                }).then((entities) => {
-                    return entities[0];
-                });
+
+                const ip = ctx.params.ip;
+
+                // parse ip
+                const parsed = pls.parse(ip);
+
+                // convert ip to int
+                const ipInt = this.ip2int(ip);
+
+                // query for ip
+                const query = {
+                    $or: [
+                        { "ip.address": ip },
+                    ]
+                };
+
+                // lookup ip in entites
+                const entity = await this.findEntity(null, {
+                    query,
+                    populate: "blacklist"
+                }, { raw: true });
+
+                if (!entity) {
+                    // lookup ip in entites
+                    return this.findEntity(null, {
+                        query: {
+                            $and: [
+                                { "ip.low": { $lte: ipInt } },
+                                { "ip.high": { $gte: ipInt } },
+                            ]
+                        },
+                        populate: "blacklist"
+                    }, { raw: true });
+                }
+
+                return entity;
             }
         },
     },
@@ -293,7 +334,27 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * ip address to int
+         * 
+         * @param {String} ip - ip address
+         * 
+         * @returns {Number} - ip int
+         */
+        ip2int(ip) {
+            return ip.split('.').reduce(function (ipInt, octet) { return (ipInt << 8) + parseInt(octet, 10) }, 0) >>> 0;
+        },
 
+        /**
+        * int to ip address
+        * 
+        * @param {Number} ipInt - ip int
+        * 
+        * @returns {String} - ip address
+        */
+        int2ip(ipInt) {
+            return ((ipInt >>> 24) + '.' + (ipInt >> 16 & 255) + '.' + (ipInt >> 8 & 255) + '.' + (ipInt & 255));
+        }
     }
 
 }

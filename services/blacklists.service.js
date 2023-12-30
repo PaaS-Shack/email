@@ -89,7 +89,31 @@ module.exports = {
      * service actions
      */
     actions: {
-        
+        /**
+         * lookup email address in blacklists
+         * 
+         * @actions
+         * @param {String} address - email address id to lookup
+         * 
+         * @returns {Object} - blacklist entity
+         */
+        address: {
+            params: {
+                address: {
+                    type: "string",
+                    required: true,
+                }
+            },
+            async handler(ctx) {
+                // get address
+                const address = await ctx.call("v2.emails.addresses.get", {
+                    id: ctx.params.address,
+                });
+                return ctx.call("v2.emails.blacklists.entities.lookupEmail", {
+                    address: address.address,
+                });
+            }
+        },
     },
 
     /**

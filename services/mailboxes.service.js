@@ -84,7 +84,7 @@ module.exports = {
                     action: "v2.emails.addresses.get",
                 }
             },
-            
+
 
             // mailbox flags
             flags: {
@@ -244,14 +244,54 @@ module.exports = {
      * service events
      */
     events: {
-
+        /**
+         * envelope created event
+         */
+        async "emails.envelopes.created"(ctx) {
+            const envelope = ctx.params.data;
+        }
     },
 
     /**
      * service methods
      */
     methods: {
+        /**
+         * lookup mailboxes by email address
+         * 
+         * @param {Context} ctx
+         * @param {String} address - email address
+         * 
+         * @returns {Promise}
+         */
+        async lookupByEmailAddress(ctx, address) {
+            return ctx.call("v2.emails.addresses.lookupByEmailAddress", { address });
+        },
 
+        /**
+         * get headers from envelope
+         * 
+         * @param {Context} ctx
+         * @param {Object} envelope - envelope object
+         * 
+         * @returns {Array} email headers
+         */
+        async getEnvelopeHeaders(ctx, envelope) {
+            // get envelope stream from s3
+            const stream = await this.getMessageStream(envelope);
+
+            // header stream
+            const headerStream = new HeaderStream();
+
+            return new Promise((resolve, reject) => {
+                headerStream.once('error', reject)
+                headerStream.once('headers', (headers) => {
+                    stream.end();
+                    resolve(headers);
+                });
+                stream.pipe(headerStream);
+            })
+        }
     }
 
 }

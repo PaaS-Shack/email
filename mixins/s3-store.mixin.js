@@ -18,7 +18,7 @@ const { MoleculerClientError } = require("moleculer").Errors;
 const Minio = require("minio");
 const crypto = require('crypto');
 const { createWriteStream, createReadStream } = require('fs');
-const uuidv4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * maildrop mixin

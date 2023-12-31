@@ -313,25 +313,7 @@ module.exports = {
 
             // check blacklist is enabled
             if (this.config["emails.smtp.blacklist"]) {
-                // lookup address
-                const blacklist = await this.broker.call("v2.emails.blacklists.address", {
-                    address: addressObject.id,
-                });
-
-                // check addressObject is valid
-                if (!blacklist.valid) {
-                    return callback(new Error('invalid address'));
-                }
-
-                // check addressObject is active
-                if (!blacklist.active) {
-                    return callback(new Error('inactive address'));
-                }
-
-                // check addressObject is not blocked
-                if (blacklist.blocked) {
-                    return callback(new Error('blocked address'));
-                }
+                //
             }
 
             // callback with null
@@ -370,25 +352,7 @@ module.exports = {
 
             // check blacklist is enabled
             if (this.config["emails.smtp.blacklist"]) {
-                // lookup address
-                const blacklist = await this.broker.call("v2.emails.blacklists.address", {
-                    address: addressObject.id,
-                });
-
-                // check addressObject is valid
-                if (!blacklist.valid) {
-                    return callback(new Error('invalid address'));
-                }
-
-                // check addressObject is active
-                if (!blacklist.active) {
-                    return callback(new Error('inactive address'));
-                }
-
-                // check addressObject is not blocked
-                if (blacklist.blocked) {
-                    return callback(new Error('blocked address'));
-                }
+               //
             }
 
             // callback with null
@@ -455,25 +419,7 @@ module.exports = {
 
             // check blacklist is enabled
             if (this.config["emails.smtp.blacklist"]) {
-                // lookup envelope
-                const blacklist = await this.broker.call("v2.emails.blacklists.envelope", {
-                    envelope: envelope.id,
-                });
-
-                // check envelope is valid
-                if (!blacklist.valid) {
-                    return callback(new Error('invalid envelope'));
-                }
-
-                // check envelope is active
-                if (!blacklist.active) {
-                    return callback(new Error('inactive envelope'));
-                }
-
-                // check envelope is not blocked
-                if (blacklist.blocked) {
-                    return callback(new Error('blocked envelope'));
-                }
+               // TODO: check envelope is valid
             }
 
 
@@ -531,25 +477,7 @@ module.exports = {
             this.sessionMap.set(session.sessionID, session);
 
             if (this.config["emails.smtp.blacklist"]) {
-                // lookup session
-                const blacklist = await this.broker.call("v2.emails.blacklists.session", {
-                    session: sessionObject.id,
-                });
-
-                // check sessionObject is valid
-                if (!blacklist.valid) {
-                    return callback(new Error('invalid session'));
-                }
-
-                // check sessionObject is active
-                if (!blacklist.active) {
-                    return callback(new Error('inactive session'));
-                }
-
-                // check sessionObject is not blocked
-                if (blacklist.blocked) {
-                    return callback(new Error('blocked session'));
-                }
+                // TODO: check sessionObject is valid
             }
 
             // callback with null

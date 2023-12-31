@@ -173,33 +173,6 @@ module.exports = {
                 }
             },
 
-            // address valid
-            valid: {
-                type: "boolean",
-                required: false,
-                default: true,
-            },
-
-            // address active
-            active: {
-                type: "boolean",
-                required: false,
-                default: true,
-            },
-
-            // address blocked
-            blocked: {
-                type: "boolean",
-                required: false,
-                default: false,
-            },
-
-            // address reason
-            reason: {
-                type: "string",
-                required: false,
-            },
-
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],
@@ -231,14 +204,18 @@ module.exports = {
          * @returns {Object} email address
          */
         lookup: {
+            rest: {
+                method: "GET",
+                path: "/lookup/:address",
+            },
             params: {
                 address: {
                     type: "string",
-                    required: true,
+                    optional: false,
                 },
             },
             async handler(ctx) {
-                return this.lookup(ctx.params.address);
+                return this.lookup(ctx, ctx.params.address);
             }
         }
     },
@@ -263,6 +240,10 @@ module.exports = {
          * @returns {Object} email address
          */
         async lookup(ctx, address) {
+
+            // normalize address
+            address = address.toLowerCase().trim();
+
             // find email address
             const result = await this.findEntity(null, {
                 query: { address: address, }
@@ -270,24 +251,19 @@ module.exports = {
 
             // check result
             if (!result) {
-                // lookup email address in blacklists service
-                const blacklist = await ctx.call("v2.emails.blacklists.lookupEmail", {
-                    address: address,
+               // create new email address
+                const newAddress = await this.createEntity(ctx, {
+                     address: address,
                 });
 
-                // check blacklist
-                if (blacklist) {
-                    // create email address entity in database from address and block it.
-                    const result = await this.createEntity(ctx, {
-                        name: blacklist.name,
-                        address: address,
-                        status: "banned",
-                        blocked: true,
-                        reason: blacklist.reason,
-                    });
-
-                    return result;
+                // check new address
+                if (!newAddress) {
+                    // throw error
+                    throw new MoleculerServerError("Unable to create email address.");
                 }
+
+                // return new address
+                return newAddress;
             }
 
             // return result

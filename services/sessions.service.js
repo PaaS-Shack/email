@@ -136,6 +136,14 @@ module.exports = {
                 }
             },
 
+            // session is closed
+            closed: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+            
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],
@@ -158,7 +166,210 @@ module.exports = {
      * service actions
      */
     actions: {
-        
+        /**
+         * add from address
+         * 
+         * @actions
+         * @param {String} id - session id
+         * @param {String} address - address id
+         * 
+         * @returns {Object} session - session object
+         */
+        addFrom: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                address: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.getSessions(ctx, ctx.params.id);
+
+                // check session
+                if (!session) {
+                    // throw error
+                    throw new MoleculerClientError("Session not found", 404, "SESSION_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get address
+                const address = await ctx.call("v2.emails.addresses.resolve", {
+                    id: ctx.params.address,
+                });
+
+                // check address
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Address not found", 404, "ADDRESS_NOT_FOUND", { id: ctx.params.address });
+                }
+
+                const query = {
+                    id: session.id,
+                    $push: {
+                        from: address.id,
+                    }
+                };
+
+                // update session
+                const update = await this.updateEntity(ctx, query);
+
+                // return session
+                return update;
+            },
+        },
+
+        /**
+         * add to address
+         * 
+         * @actions
+         * @param {String} id - session id
+         * @param {String} address - address id
+         * 
+         * @returns {Object} session - session object
+         */
+        addTo: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                address: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.getSessions(ctx, ctx.params.id);
+
+                // check session
+                if (!session) {
+                    // throw error
+                    throw new MoleculerClientError("Session not found", 404, "SESSION_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get address
+                const address = await ctx.call("v2.emails.addresses.resolve", {
+                    id: ctx.params.address,
+                });
+
+                // check address
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Address not found", 404, "ADDRESS_NOT_FOUND", { id: ctx.params.address });
+                }
+
+                const query = {
+                    id: session.id,
+                    $push: {
+                        to: address.id,
+                    }
+                };
+
+                // update session
+                const update = await this.updateEntity(ctx, query);
+
+                // return session
+                return update;
+            },
+        },
+
+        /**
+         * add envelope
+         * 
+         * @actions
+         * @param {String} id - session id
+         * @param {String} envelope - envelope id
+         * 
+         * @returns {Object} session - session object
+         */
+        addEnvelope: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                envelope: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.getSessions(ctx, ctx.params.id);
+
+                // check session
+                if (!session) {
+                    // throw error
+                    throw new MoleculerClientError("Session not found", 404, "SESSION_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get envelope
+                const envelope = await ctx.call("v2.emails.envelopes.resolve", {
+                    id: ctx.params.envelope,
+                });
+
+                // check envelope
+                if (!envelope) {
+                    // throw error
+                    throw new MoleculerClientError("Envelope not found", 404, "ENVELOPE_NOT_FOUND", { id: ctx.params.envelope });
+                }
+
+                const query = {
+                    id: session.id,
+                    $push: {
+                        envelopes: envelope.id,
+                    }
+                };
+
+                // update session
+                const update = await this.updateEntity(ctx, query);
+
+                // return session
+                return update;
+            }
+        },
+
+        /**
+         * session close event
+         * 
+         * @actions
+         * @param {String} id - session id
+         * 
+         * @returns {Object} session - session object
+         */
+        close: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.getSessions(ctx, ctx.params.id);
+
+                // check session
+                if (!session) {
+                    // throw error
+                    throw new MoleculerClientError("Session not found", 404, "SESSION_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // update session
+                const update = await this.updateEntity(ctx, {
+                    id: session.id,
+                    closed: true,
+                });
+
+                // return session
+                return update;
+            }
+        },
+
     },
 
     /**
@@ -172,7 +383,24 @@ module.exports = {
      * service methods
      */
     methods: {
-        
+
+        /**
+         * get sessions
+         * 
+         * @param {Object} ctx - context
+         * @param {String} id - session id
+         * 
+         * @returns {Object} session - session object
+         */
+        async getSessions(ctx, id) {
+            // get session
+            const session = await this.resolveEntities(ctx, {
+                id,
+            });
+
+            // return session
+            return session;
+        },
 
         /**
          * create session

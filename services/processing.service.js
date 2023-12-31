@@ -179,8 +179,10 @@ module.exports = {
 
             // process addresses
             await this.processAddreses(ctx, email, envelope);
+            // process metadata
+            await this.processMetadata(ctx, email, envelope);
 
-
+            
 
             return email;
         },

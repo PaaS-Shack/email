@@ -196,7 +196,7 @@ module.exports = {
      */
     actions: {
         /**
-         * lookup email address
+         * lookup email address, if address not found then create new one.
          * 
          * @actions
          * @param {String} address - email address
@@ -217,6 +217,29 @@ module.exports = {
             async handler(ctx) {
                 return this.lookup(ctx, ctx.params.address);
             }
+        },
+        /**
+         * lookup addresess by email address
+         * 
+         * @actions
+         * @param {String} address - email address
+         * 
+         * @returns {Array} email addresess
+         */
+        lookupByEmailAddress: {
+            rest: {
+                method: "GET",
+                path: "/address/:address",
+            },
+            params: {
+                address: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                return this.lookupByEmailAddress(ctx, ctx.params.address);
+            }
         }
     },
 
@@ -231,6 +254,32 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * get addresess by email address
+         * 
+         * @param {Context} ctx - molecularjs context
+         * @param {String} address - email address
+         * 
+         * @returns {Promise}
+         */
+        async lookupByEmailAddress(ctx, address) {
+            // split address for wildcard
+            const hostname = address.split('@')[1];
+            const wildcard = `*@${hostname}`;
+
+            // query
+            const query = {
+                $or: [
+                    { address: address },
+                    { address: wildcard }
+                ]
+            };
+
+            return this.findEntities(null, {
+                query,
+            }, { raw: true });
+        },
+
         /**
          * lookup email address
          * 
@@ -251,9 +300,9 @@ module.exports = {
 
             // check result
             if (!result) {
-               // create new email address
+                // create new email address
                 const newAddress = await this.createEntity(ctx, {
-                     address: address,
+                    address: address,
                 });
 
                 // check new address

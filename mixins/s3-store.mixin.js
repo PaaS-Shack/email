@@ -90,6 +90,7 @@ module.exports = {
             const metadata = {
                 'Content-Type': 'message/rfc822',
             };
+
             return new Promise((resolve, reject) => {
 
                 this.s3.putObject(bucket, name, stream, null, metadata, function (err, res) {
@@ -115,9 +116,9 @@ module.exports = {
          */
         getMessageStream(envelope) {
 
-            const id = envelope.id;
-            const bucket = this.config['emails.s3.bucket'] || 'emails';
-            const name = `${id}.eml`;
+            const key = envelope.key;
+            const bucket = envelope.bucket;
+            const name = `${key}.eml`;
 
             return new Promise((resolve, reject) => {
 

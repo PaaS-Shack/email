@@ -253,19 +253,16 @@ module.exports = {
          */
         async resolveKeyCert(hostname) {
             // resolve key and cert
-
-            const ctx = new Context(this.broker);
-
-            let result = await ctx.call("v1.certificates.resolveDomain", {
+            let result = await this.broker.call("v1.certificates.resolveDomain", {
                 domain: hostname
             });
 
             // check result
             if (!result) {
-                await ctx.call("v1.certificates.letsencrypt.dns", {
+                await this.broker.call("v1.certificates.letsencrypt.dns", {
                     domain: hostname
                 });
-                result = await ctx.call("v1.certificates.resolveDomain", {
+                result = await this.broker.call("v1.certificates.resolveDomain", {
                     domain: hostname
                 });
             }

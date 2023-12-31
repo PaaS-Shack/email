@@ -142,7 +142,7 @@ module.exports = {
                 required: false,
                 default: false,
             },
-            
+
 
             ...DbService.FIELDS,// inject dbservice fields
         },
@@ -204,7 +204,7 @@ module.exports = {
                 // check address
                 if (!address) {
                     // throw error
-                    throw new MoleculerClientError("Address not found", 404, "ADDRESS_NOT_FOUND", { id: ctx.params.address });
+                    throw new MoleculerClientError("Address not found", 404, "ADDRESS_NOT_FOUND", { address: ctx.params.address });
                 }
 
                 const query = {
@@ -260,7 +260,7 @@ module.exports = {
                 // check address
                 if (!address) {
                     // throw error
-                    throw new MoleculerClientError("Address not found", 404, "ADDRESS_NOT_FOUND", { id: ctx.params.address });
+                    throw new MoleculerClientError("Address not found", 404, "ADDRESS_NOT_FOUND", { address: ctx.params.address });
                 }
 
                 const query = {
@@ -316,7 +316,7 @@ module.exports = {
                 // check envelope
                 if (!envelope) {
                     // throw error
-                    throw new MoleculerClientError("Envelope not found", 404, "ENVELOPE_NOT_FOUND", { id: ctx.params.envelope });
+                    throw new MoleculerClientError("Envelope not found", 404, "ENVELOPE_NOT_FOUND", { envelope: ctx.params.envelope });
                 }
 
                 const query = {
@@ -432,11 +432,10 @@ module.exports = {
             // resolve dns
             const addresses = await ctx.call("v1.utils.dns.resolve", {
                 host,
-            })
-                .catch((err) => {
-                    // return host
-                    return [];
-                });
+            }).catch((err) => {
+                // return host
+                return [];
+            });
 
             // return first address
             return addresses[0];
@@ -454,11 +453,10 @@ module.exports = {
             // reverse dns
             const hostnames = await ctx.call("v1.utils.dns.reverse", {
                 ip,
-            })
-                .catch((err) => {
-                    // return address
-                    return [];
-                });
+            }).catch((err) => {
+                // return address
+                return [];
+            });
 
             // return first hostname
             return hostnames[0];

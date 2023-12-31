@@ -243,7 +243,7 @@ module.exports = {
             const metadata = await this.storeAttachment(ctx, attachment, envelope);
 
             // create new attachment entity
-            const attachment = await ctx.call("v2.emails.attachments.create", {
+            const attachmentEntity = await ctx.call("v2.emails.attachments.create", {
                 envelope: envelope.id,
                 // email attachment name
                 name: attachment.filename,
@@ -259,7 +259,7 @@ module.exports = {
                 bucket: metadata.bucket,
             });
 
-            return attachment;
+            return attachmentEntity;
         },
 
         /**

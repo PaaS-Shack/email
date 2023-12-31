@@ -3,7 +3,8 @@ const Membership = require("membership-mixin");
 const ConfigLoader = require("config-mixin");
 
 const zlib = require('zlib');
-const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+
 
 const { MoleculerClientError, MoleculerServerError } = require("moleculer").Errors;
 
@@ -11,6 +12,8 @@ const HeaderSplitter = require("../lib/header-splitter");
 const { Context } = require("moleculer");
 
 const MailParser = require('mailparser').MailParser;
+const { v4: uuidv4 } = require('uuid');
+const { name } = require("cron-mixin");
 
 /**
  * This service has no database.  It is used to process raw emails that are stored in s3.
@@ -60,14 +63,53 @@ module.exports = {
      * service actions
      */
     actions: {
+        /**
+         * process envelope
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * 
+         * @returns {Object} - returns email object
+         */
+        process: {
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                }
+            },
+            async handler(ctx) {
+                const id = ctx.params.id;
 
+                // get envelope
+                const envelope = await ctx.call("v2.emails.envelopes.get", { id });
+
+                // process raw email
+                const email = await this.process(ctx, envelope);
+
+                // look up to address and create new message 
+                await this.processToAddress(ctx, email, envelope);
+
+                return email;
+            }
+        }
     },
 
     /**
      * service events
      */
     events: {
+        async "emails.envelope.created"(ctx) {
+            const envelope = ctx.params.data;
+            this.logger.info("emails.envelope.created", envelope);
 
+            // process raw email
+            this.process(ctx, envelope).then(email => {
+                this.logger.info("emails.processing", email);
+            }).catch(err => {
+                this.logger.error("emails.processing", err);
+            });
+        }
     },
 
     /**
@@ -103,35 +145,24 @@ module.exports = {
             // listen for headers
             parser.on('headers', headers => {
                 email.headers = headers;
-
-                // get from
-                email.from = headers.get('from') || [];
-                // get to
-                email.to = headers.get('to') || [];
-                // get cc
-                email.cc = headers.get('cc') || [];
-                // get bcc
-                email.bcc = headers.get('bcc') || [];
-                // get replyTo
-                email.replyTo = headers.get('reply-to') || [];
-                // get subject
-                email.subject = headers.get('subject') || '';
-                // get date
-                email.date = headers.get('date') || '';
             });
 
-            parser.on('data', data => {
+            parser.on('data', async (data) => {
                 if (data.type === 'attachment') {
                     // store attachment in s3
-                    this.storeAttachment(ctx, data.content, data).then(attachment => {
-                        email.attachments = email.attachments || [];
-                        email.attachments.push(attachment);
-                    }).catch(err => {
-                        throw new MoleculerServerError(err.message, err.code, "STORE_ATTACHMENT_ERROR", { err });
-                    });
-                }else if (data.type === 'text') {
+                    await this.processAttachment(ctx, data, envelope)
+                        .then(attachment => {
+                            email.attachments.push(attachment.id);
+                        })
+                        .catch(err => {
+                            this.logger.error(`Error processing attachment ${data.filename}`, err);
+                        })
+                } else if (data.type === 'text') {
                     email.body = data.text;
                 }
+
+                // release data 
+                data.release();
             });
 
             // get raw email from s3
@@ -150,43 +181,198 @@ module.exports = {
         },
 
         /**
-         * store attachment in s3
+         * process attachment
          * 
-         * @param {Context} ctx - moleculer context
-         * @param {Stream} stream - attachment stream
+         * @param {Object} ctx - moleculer context
          * @param {Object} attachment - attachment object
+         * @param {Object} envelope - envelope object
          * 
          * @returns {Promise<Object>} - returns attachment object
          */
-        async storeAttachment(ctx, stream, attachment) {
+        async processAttachment(ctx, attachment, envelope) {
+            // store attachment in s3
+            const metadata = await this.storeAttachment(ctx, attachment, envelope);
+
+            // create new attachment entity
+            const attachment = await ctx.call("v2.emails.attachments.create", {
+                envelope: envelope.id,
+                // email attachment name
+                name: attachment.filename,
+                // email attachment size
+                size: attachment.size,
+                // email attachment mime type
+                mime: attachment.contentType,
+                // email attachment hash
+                hash: metadata.etag,
+                // email attachment s3 key
+                key: metadata.name,
+                // email attachment s3 bucket
+                bucket: metadata.bucket,
+            });
+
+            return attachment;
+        },
+
+        /**
+         * store attachment in s3
+         * 
+         * @param {Context} ctx - moleculer context
+         * @param {Object} attachment - attachment object
+         * @param {Object} envelope - envelope object
+         * 
+         * @returns {Promise<Object>} - returns attachment s3 metadata
+         */
+        async storeAttachment(ctx, attachment, envelope) {
             const bucket = this.config['emails.s3.attachments'] || 'attachments';
-            const name = `${uuidv4()}.tar.gz`;
+
+            // file extension
+            const ext = path.extname(attachment.filename);
+            // file name
+            const name = `${uuidv4()}${ext}`;
+            // mime type
+            const contentType = attachment.contentType;
 
             const metadata = {
-                'Content-Type': 'application/gzip',
+                'Content-Type': contentType,
+                'x-amz-meta-envelope': envelope.id,
             };
-
-            // zip stream
-            const gzip = zlib.createGzip();
-
-            // pipe stream to gzip
-            stream.pipe(gzip);            
 
             return new Promise((resolve, reject) => {
 
-                this.s3.putObject(bucket, name, gzip, null, metadata, function (err, res) {
+                this.s3.putObject(bucket, name, stream, null, metadata, async (err, res) => {
                     if (err) {
                         return reject(err);
                     }
-
                     return resolve({
                         bucket,
                         name,
                         etag: res.etag,
+                        size: res.size,
                     });
                 });
             });
         },
+
+        /**
+         * process to address
+         * 
+         * @param {Object} ctx - moleculer context
+         * @param {Object} email - email object
+         * @param {Object} envelope - envelope object
+         * 
+         * @returns {Promise<Object>} - returns email object
+         */
+        async processAddreses(ctx, email, envelope) {
+            // get to address
+            const to = email.headers.get('to');
+            if (!to) {
+                throw new Error(`Email has no to address ${envelope.id}`);
+            }
+
+            // get from address
+            const from = email.headers.get('from');
+            if (!from) {
+                throw new Error(`Email has no from address ${envelope.id}`);
+            }
+
+            // lookup from address
+            const fromAddresses = await ctx.call("v2.emails.addresses.lookup", {
+                address: from.value[0].address,
+            });
+
+
+            // loop through to addresses
+            for (const address of to.value) {
+                // lookup addresses
+                const addresses = await ctx.call("v2.emails.addresses.lookupByEmailAddress", {
+                    address: address.address,
+                });
+
+                // loop through addresses and of has mailboxes create message
+                for (const address of addresses) {
+                    if (address.mailboxes.length > 0) {
+                        const messageEntity = {
+                            envelope: envelope.id,
+                            subject: '',
+                            from: [],
+                            to: [],
+                            cc: [],
+                            bcc: [],
+                            replyTo: [],
+                            attachments: [...email.attachments],
+                        };
+
+                        // get subject
+                        const subject = email.headers.get('subject');
+                        if (subject) {
+                            messageEntity.subject = subject.value;
+                        }
+
+                        // get from address
+                        const from = email.headers.get('from');
+                        if (from) {
+                            messageEntity.from = await this.processAddressArray(ctx, from.value);
+                        }
+
+                        // get to address
+                        const to = email.headers.get('to');
+                        if (to) {
+                            messageEntity.to = await this.processAddressArray(ctx, to.value);
+                        }
+
+                        // get cc address
+                        const cc = email.headers.get('cc');
+                        if (cc) {
+                            messageEntity.cc = await this.processAddressArray(ctx, cc.value);
+                        }
+
+                        // get bcc address
+                        const bcc = email.headers.get('bcc');
+                        if (bcc) {
+                            messageEntity.bcc = await this.processAddressArray(ctx, bcc.value);
+                        }
+
+                        // get reply to address
+                        const replyTo = email.headers.get('reply-to');
+                        if (replyTo) {
+                            const addressEntity = await ctx.call("v2.emails.addresses.lookup", {
+                                name: address.name,
+                                address: address.address,
+                            });
+
+                            messageEntity.replyTo.push(addressEntity.id);
+                        }
+
+
+                    }
+                }
+            }
+        },
+
+        /**
+         * process address array
+         * 
+         * @param {Object} ctx - moleculer context
+         * @param {Array} addresses - address array
+         * 
+         * @returns {Promise<Object>} - returns address object
+         */
+        async processAddressArray(ctx, addresses) {
+            const addressEntities = [];
+
+            // loop through addresses
+            for (const address of addresses) {
+                // lookup address
+                const addressEntity = await ctx.call("v2.emails.addresses.lookup", {
+                    name: address.name,
+                    address: address.address,
+                });
+
+                addressEntities.push(addressEntity.id);
+            }
+
+            return addressEntities;
+        }
     }
 
 }

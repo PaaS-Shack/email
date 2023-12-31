@@ -200,6 +200,7 @@ module.exports = {
          * 
          * @actions
          * @param {String} address - email address
+         * @param {String} name - email address name
          * 
          * @returns {Object} email address
          */
@@ -213,9 +214,13 @@ module.exports = {
                     type: "string",
                     optional: false,
                 },
+                name: {
+                    type: "string",
+                    optional: true,
+                },
             },
             async handler(ctx) {
-                return this.lookup(ctx, ctx.params.address);
+                return this.lookup(ctx, ctx.params.address, ctx.params.name);
             }
         },
         /**
@@ -272,7 +277,7 @@ module.exports = {
                 $or: [
                     { address: address },
                     { address: wildcard }
-                ]
+                ],
             };
 
             return this.findEntities(null, {
@@ -288,7 +293,7 @@ module.exports = {
          * 
          * @returns {Object} email address
          */
-        async lookup(ctx, address) {
+        async lookup(ctx, address, name) {
 
             // normalize address
             address = address.toLowerCase().trim();
@@ -303,6 +308,7 @@ module.exports = {
                 // create new email address
                 const newAddress = await this.createEntity(ctx, {
                     address: address,
+                    name: name,
                 });
 
                 // check new address

@@ -75,6 +75,19 @@ module.exports = {
                 ]
             },
 
+            // email address type
+            type: {
+                type: "string",
+                required: false,
+                default: "mailbox",
+                enum: [
+                    "mailbox",
+                    "alias",
+                    "forward",
+                    "from",
+                ]
+            },
+
             // first seen date
             firstSeen: {
                 type: "number",
@@ -278,6 +291,7 @@ module.exports = {
                     { address: address },
                     { address: wildcard }
                 ],
+                type: "mailbox",
             };
 
             return this.findEntities(null, {
@@ -309,6 +323,7 @@ module.exports = {
                 const newAddress = await this.createEntity(ctx, {
                     address: address,
                     name: name,
+                    type: "from",
                 });
 
                 // check new address

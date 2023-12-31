@@ -177,7 +177,56 @@ module.exports = {
                 parser.on('error', reject);
             });
 
+            // process addresses
+            await this.processAddreses(ctx, email, envelope);
+
+
+
             return email;
+        },
+
+        /**
+         * process email metadata
+         * 
+         * @param {Object} ctx - moleculer context
+         * @param {Object} email - email object
+         * @param {Object} envelope - envelope object
+         * 
+         * @returns {Promise<Object>} - returns email object
+         */
+        async processMetadata(ctx, email, envelope) {
+
+            // process subject
+            email.subject = email.headers.get('subject').value[0];
+
+            // process date
+            email.date = email.headers.get('date').value[0];
+            // convert date to iso string
+            email.date = new Date(email.date).toISOString();
+
+            // message id
+            email.messageId = email.headers.get('message-id').value[0];
+            // message id hash
+            email.hash = messageId.split('@')[0];
+
+            // email user agent
+            email.userAgent = email.headers.get('user-agent').value[0];
+            // email mime version
+            email.mimeVersion = email.headers.get('mime-version').value[0];
+
+            // email priority
+            email.priority = email.headers.get('priority').value[0];
+            // email x priority
+            email.xPriority = email.headers.get('x-priority').value[0];
+
+            // email content type
+            email.contentType = email.headers.get('content-type').value[0];
+
+            // email content transfer encoding
+            email.contentTransferEncoding = email.headers.get('content-transfer-encoding').value[0];
+
+            
+
         },
 
         /**
@@ -238,7 +287,6 @@ module.exports = {
             };
 
             return new Promise((resolve, reject) => {
-
                 this.s3.putObject(bucket, name, stream, null, metadata, async (err, res) => {
                     if (err) {
                         return reject(err);
@@ -268,85 +316,78 @@ module.exports = {
             if (!to) {
                 throw new Error(`Email has no to address ${envelope.id}`);
             }
-
-            // get from address
-            const from = email.headers.get('from');
-            if (!from) {
-                throw new Error(`Email has no from address ${envelope.id}`);
-            }
-
-            // lookup from address
-            const fromAddresses = await ctx.call("v2.emails.addresses.lookup", {
-                address: from.value[0].address,
-            });
-
-
             // loop through to addresses
             for (const address of to.value) {
                 // lookup addresses
                 const addresses = await ctx.call("v2.emails.addresses.lookupByEmailAddress", {
                     address: address.address,
                 });
+                email.to.push(...addresses);
+            }
+            // add envelope to addresses
+            email.to.push(...envelope.to);
+            // filter out duplicates
+            email.to = email.to.filter((v, i, a) => a.indexOf(v) === i);
 
-                // loop through addresses and of has mailboxes create message
-                for (const address of addresses) {
-                    if (address.mailboxes.length > 0) {
-                        const messageEntity = {
-                            envelope: envelope.id,
-                            subject: '',
-                            from: [],
-                            to: [],
-                            cc: [],
-                            bcc: [],
-                            replyTo: [],
-                            attachments: [...email.attachments],
-                        };
+            // get from address
+            const from = email.headers.get('from');
+            if (!from) {
+                throw new Error(`Email has no from address ${envelope.id}`);
+            }
+            // loop through to addresses
+            for (const address of from.value) {
+                // lookup addresses
+                const addresses = await ctx.call("v2.emails.addresses.lookup", {
+                    address: address.address,
+                    name: address.name,
+                });
+                email.from.push(addresses);
+            }
+            // add envelope from addresses
+            email.from.push(...envelope.from);
 
-                        // get subject
-                        const subject = email.headers.get('subject');
-                        if (subject) {
-                            messageEntity.subject = subject.value;
-                        }
-
-                        // get from address
-                        const from = email.headers.get('from');
-                        if (from) {
-                            messageEntity.from = await this.processAddressArray(ctx, from.value);
-                        }
-
-                        // get to address
-                        const to = email.headers.get('to');
-                        if (to) {
-                            messageEntity.to = await this.processAddressArray(ctx, to.value);
-                        }
-
-                        // get cc address
-                        const cc = email.headers.get('cc');
-                        if (cc) {
-                            messageEntity.cc = await this.processAddressArray(ctx, cc.value);
-                        }
-
-                        // get bcc address
-                        const bcc = email.headers.get('bcc');
-                        if (bcc) {
-                            messageEntity.bcc = await this.processAddressArray(ctx, bcc.value);
-                        }
-
-                        // get reply to address
-                        const replyTo = email.headers.get('reply-to');
-                        if (replyTo) {
-                            const addressEntity = await ctx.call("v2.emails.addresses.lookup", {
-                                name: address.name,
-                                address: address.address,
-                            });
-
-                            messageEntity.replyTo.push(addressEntity.id);
-                        }
-
-
-                    }
+            // get cc address
+            const cc = email.headers.get('cc');
+            if (cc) {
+                // loop through to addresses
+                for (const address of cc.value) {
+                    // lookup addresses
+                    const addresses = await ctx.call("v2.emails.addresses.lookup", {
+                        address: address.address,
+                        name: address.name,
+                    });
+                    email.cc.push(addresses);
                 }
             }
+
+            // get bcc address
+            const bcc = email.headers.get('bcc');
+            if (bcc) {
+                // loop through to addresses
+                for (const address of bcc.value) {
+                    // lookup addresses
+                    const addresses = await ctx.call("v2.emails.addresses.lookup", {
+                        address: address.address,
+                        name: address.name,
+                    });
+                    email.bcc.push(addresses);
+                }
+            }
+
+            // get replyTo address
+            const replyTo = email.headers.get('reply-to');
+            if (replyTo) {
+                // loop through to addresses
+                for (const address of replyTo.value) {
+                    // lookup addresses
+                    const addresses = await ctx.call("v2.emails.addresses.lookup", {
+                        address: address.address,
+                        name: address.name,
+                    });
+                    email.replyTo.push(addresses);
+                }
+            }
+
         },
 
         /**

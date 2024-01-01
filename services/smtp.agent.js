@@ -273,6 +273,8 @@ module.exports = {
                 throw new Error('failed to resolve key and cert');
             }
 
+            this.logger.info(`resolved key and cert for ${hostname}`);
+
             const { privkey, chain, cert } = result;
 
             // return key and cert
@@ -306,6 +308,8 @@ module.exports = {
                 id: session.sessionID,
                 address: addressObject.id,
             });
+
+            this.logger.info(`from: ${addressObject.id}`);
 
             // add address to session 
             session.from = addressObject.id;
@@ -346,6 +350,8 @@ module.exports = {
                 address: addressObject.id,
             });
 
+            this.logger.info(`to: ${addressObject.id}`);
+
             // add address to session
             session.to.push(addressObject.id);
 
@@ -385,8 +391,12 @@ module.exports = {
             // write stream to file
             const tmpFile = await this.writeStreamToTmpFile(stream);
 
+            this.logger.info(`stored stream to ${tmpFile}`);
+
             // upload stream to s3
             const s3Object = await this.storeMessageStream(fs.createReadStream(tmpFile));
+
+            this.logger.info(`uploaded stream to s3://${s3Object.bucket}/${s3Object.name}`);
 
             // from address
             const from = session.from;
@@ -408,6 +418,8 @@ module.exports = {
                 id: session.sessionID,
                 envelope: envelope.id,
             });
+
+            this.logger.info(`created envelope ${envelope.id}`);
 
             // unlink tmp file
             await fs.unlink(tmpFile);
@@ -464,6 +476,8 @@ module.exports = {
                 hostNameAppearsAs: session.hostNameAppearsAs,
                 openingCommand: session.openingCommand,
             });
+
+            this.logger.info(`created session ${sessionObject.id}`);
 
             // add sessionID to session object
             session.sessionID = sessionObject.id;

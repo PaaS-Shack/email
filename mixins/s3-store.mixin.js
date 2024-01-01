@@ -126,11 +126,10 @@ module.exports = {
 
             const key = envelope.key;
             const bucket = envelope.bucket;
-            const name = `${key}.eml`;
 
             return new Promise((resolve, reject) => {
 
-                this.s3.getObject(bucket, name, function (err, stream) {
+                this.s3.getObject(bucket, key, function (err, stream) {
                     if (err) {
                         return reject(err);
                     }

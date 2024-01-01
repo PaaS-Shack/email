@@ -89,9 +89,6 @@ module.exports = {
                 // process raw email
                 const email = await this.process(ctx, envelope);
 
-                // look up to address and create new message 
-                await this.processToAddress(ctx, email, envelope);
-
                 return email;
             }
         }
@@ -164,7 +161,7 @@ module.exports = {
                 }
 
                 // release data 
-                data.release();
+                //data.release();
             });
 
             // get raw email from s3
@@ -199,37 +196,38 @@ module.exports = {
          * @returns {Promise<Object>} - returns email object
          */
         async processMetadata(ctx, email, envelope) {
-
             // process subject
-            email.subject = email.headers.get('subject').value[0];
+            email.subject = email.headers.get('subject');
 
             // process date
-            email.date = email.headers.get('date').value[0];
+            email.date = email.headers.get('date');
             // convert date to iso string
-            email.date = new Date(email.date).toISOString();
+            email.date = new Date(email.date);
 
             // message id
-            email.messageId = email.headers.get('message-id').value[0];
+            email.messageId = email.headers.get('message-id')
             // message id hash
-            email.hash = messageId.split('@')[0];
-
-            // email user agent
-            email.userAgent = email.headers.get('user-agent').value[0];
-            // email mime version
-            email.mimeVersion = email.headers.get('mime-version').value[0];
+            email.hash = email.messageId.split('@')[0];
 
             // email priority
-            email.priority = email.headers.get('priority').value[0];
+            email.priority = email.headers.get('priority');
             // email x priority
-            email.xPriority = email.headers.get('x-priority').value[0];
+            email.xPriority = email.headers.get('x-priority');
+
+            // email user agent
+            email.userAgent = email.headers.get('user-agent');
+            // email mime version
+            email.mimeVersion = email.headers.get('mime-version');
 
             // email content type
-            email.contentType = email.headers.get('content-type').value[0];
+            email.contentType = email.headers.get('content-type');
+            if (email.contentType && email.contentType.value) {
+                email.contentType = email.contentType.value;
+            }
 
             // email content transfer encoding
-            email.contentTransferEncoding = email.headers.get('content-transfer-encoding').value[0];
+            email.contentTransferEncoding = email.headers.get('content-transfer-encoding');
 
-            
 
         },
 
@@ -326,12 +324,19 @@ module.exports = {
                 const addresses = await ctx.call("v2.emails.addresses.lookupByEmailAddress", {
                     address: address.address,
                 });
+
+                if (addresses.length === 0) {
+                    const addressEntity = await ctx.call("v2.emails.addresses.lookup", {
+                        name: address.name,
+                        address: address.address,
+                    });
+                    email.to.push(addressEntity);
+                }
+
                 email.to.push(...addresses);
             }
-            // add envelope to addresses
-            email.to.push(...envelope.to);
             // filter out duplicates
-            email.to = email.to.filter((v, i, a) => a.indexOf(v) === i);
+            //email.to = email.to.filter((v, i, a) => a.indexOf(v) === i);
 
             // get from address
             const from = email.headers.get('from');
@@ -347,8 +352,6 @@ module.exports = {
                 });
                 email.from.push(addresses);
             }
-            // add envelope from addresses
-            email.from.push(...envelope.from);
 
             // get cc address
             const cc = email.headers.get('cc');

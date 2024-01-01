@@ -298,7 +298,8 @@ module.exports = {
 
             // check sni map cache
             if (this.sniMap.has(servername)) {
-                return callback(null, this.sniMap.get(servername));
+                console.log(this.sniMap.get(servername))
+                //return callback(null, this.sniMap.get(servername));
             }
 
             // resolve key and cert

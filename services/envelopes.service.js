@@ -49,8 +49,8 @@ module.exports = {
             session: {
                 type: "string",
                 required: true,
-                populate:{
-                    action: "v2.emails.sessions.get",
+                populate: {
+                    action: "v2.emails.sessions.resolve",
                 }
             },
 
@@ -58,8 +58,8 @@ module.exports = {
             from: {
                 type: "string",
                 required: true,
-                populate:{
-                    action: "v2.emails.addresses.get",
+                populate: {
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -67,8 +67,8 @@ module.exports = {
             to: {
                 type: "array",
                 required: true,
-                populate:{
-                    action: "v2.emails.addresses.get",
+                populate: {
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -88,6 +88,24 @@ module.exports = {
             size: {
                 type: "number",
                 required: true,
+            },
+
+            // email message attachments
+            attachments: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+                populate: {
+                    action: "v2.emails.attachments.resolve",
+                }
+            },
+
+            // email envelope processed flag
+            processed: {
+                type: "boolean",
+                required: false,
+                default: false,
             },
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -112,14 +130,161 @@ module.exports = {
      * service actions
      */
     actions: {
-        
+        /**
+         * add attachment to email
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * @param {String} attachment - attachment id
+         * 
+         * @returns {Object} attachment
+         */
+        addAttachment: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                attachment: {
+                    type: "string",
+                    optional: false,
+                }
+            },
+            async handler(ctx) {
+                const { id, attachment: attachmentID } = ctx.params;
+
+                // get envelope
+                const envelope = await this.resolveEntities(ctx, { id });
+
+                // check envelope
+                if (!envelope) {
+                    throw new MoleculerClientError("Envelope not found", 404, "ENVELOPE_NOT_FOUND", { id });
+                }
+
+                // get attachment
+                const attachment = await ctx.call("v2.emails.attachments.resolve", { id: attachmentID });
+
+                // check attachment
+                if (!attachment) {
+                    throw new MoleculerClientError("Attachment not found", 404, "ATTACHMENT_NOT_FOUND", { id: attachmentID });
+                }
+
+                const query = {
+                    id: envelope.id,
+                    $push: {
+                        from: attachment.id,
+                    }
+                };
+
+                // update session
+                const update = await this.updateEntity(ctx, query);
+
+                // return session
+                return update;
+            }
+        },
+
+        /**
+         * remove attachment from email
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * @param {String} attachment - attachment id
+         * 
+         * @returns {Object} attachment
+         */
+        removeAttachment: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                attachment: {
+                    type: "string",
+                    optional: false,
+                }
+            },
+            async handler(ctx) {
+                const { id, attachment: attachmentID } = ctx.params;
+
+                // get envelope
+                const envelope = await this.resolveEntities(ctx, { id });
+
+                // check envelope
+                if (!envelope) {
+                    throw new MoleculerClientError("Envelope not found", 404, "ENVELOPE_NOT_FOUND", { id });
+                }
+
+                // get attachment
+                const attachment = await ctx.call("v2.emails.attachments.resolve", { id: attachmentID });
+
+                // check attachment
+                if (!attachment) {
+                    throw new MoleculerClientError("Attachment not found", 404, "ATTACHMENT_NOT_FOUND", { id: attachmentID });
+                }
+
+                const query = {
+                    id: envelope.id,
+                    $pull: {
+                        from: attachment.id,
+                    }
+                };
+
+                // update session
+                const update = await this.updateEntity(ctx, query);
+
+                // return session
+                return update;
+            }
+        },
+
+        /**
+         * mark envelope as processed
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * 
+         * @returns {Object} envelope
+         */
+        processed: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                const { id } = ctx.params;
+
+                // get envelope
+                const envelope = await this.resolveEntities(ctx, { id });
+
+                // check envelope
+                if (!envelope) {
+                    throw new MoleculerClientError("Envelope not found", 404, "ENVELOPE_NOT_FOUND", { id });
+                }
+
+                const query = {
+                    id: envelope.id,
+                    $set: {
+                        processed: true,
+                    }
+                };
+
+                // update session
+                const update = await this.updateEntity(ctx, query, { raw: true });
+
+                // return session
+                return update;
+            }
+        },
     },
 
     /**
      * service events
      */
     events: {
-       
+
     },
 
     /**

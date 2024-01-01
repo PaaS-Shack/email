@@ -98,7 +98,7 @@ module.exports = {
      * service events
      */
     events: {
-        async "emails.envelope.created"(ctx) {
+        async "emails.envelopes.created"(ctx) {
             const envelope = ctx.params.data;
             this.logger.info("emails.envelope.created", envelope);
 
@@ -125,7 +125,12 @@ module.exports = {
          */
         async process(ctx, envelope) {
 
+            if (envelope.processed) {
+                throw new Error(`Envelope already processed ${envelope.id}`);
+            }
+
             const email = {
+                envelope: envelope.id,
                 attachments: [],
                 from: [],
                 to: [],
@@ -181,9 +186,15 @@ module.exports = {
             // process metadata
             await this.processMetadata(ctx, email, envelope);
 
+            // create email entity
+            const emailEntity = await ctx.call("v2.emails.create", email);
 
+            // mark envelope as processed
+            await ctx.call("v2.emails.envelopes.processed", {
+                id: envelope.id
+            });
 
-            return email;
+            return emailEntity;
         },
 
         /**
@@ -259,6 +270,12 @@ module.exports = {
                 key: metadata.name,
                 // email attachment s3 bucket
                 bucket: metadata.bucket,
+            });
+
+            // add attachment to envelope
+            await ctx.call("v2.emails.envelopes.addAttachment", {
+                id: envelope.id,
+                attachment: attachmentEntity.id,
             });
 
             return attachmentEntity;
@@ -338,15 +355,7 @@ module.exports = {
                     address: address.address,
                 });
 
-                if (addresses.length === 0) {
-                    const addressEntity = await ctx.call("v2.emails.addresses.lookup", {
-                        name: address.name,
-                        address: address.address,
-                    });
-                    email.to.push(addressEntity);
-                }
-
-                email.to.push(...addresses);
+                email.to.push(...addresses.map((address) => address.id));
             }
             // filter out duplicates
             //email.to = email.to.filter((v, i, a) => a.indexOf(v) === i);
@@ -363,7 +372,7 @@ module.exports = {
                     address: address.address,
                     name: address.name,
                 });
-                email.from.push(addresses);
+                email.from.push(addresses.id);
             }
 
             // get cc address
@@ -376,7 +385,7 @@ module.exports = {
                         address: address.address,
                         name: address.name,
                     });
-                    email.cc.push(addresses);
+                    email.cc.push(addresses.id);
                 }
             }
 
@@ -390,7 +399,7 @@ module.exports = {
                         address: address.address,
                         name: address.name,
                     });
-                    email.bcc.push(addresses);
+                    email.bcc.push(addresses.id);
                 }
             }
 
@@ -404,7 +413,7 @@ module.exports = {
                         address: address.address,
                         name: address.name,
                     });
-                    email.replyTo.push(addresses);
+                    email.replyTo.push(addresses.id);
                 }
             }
 

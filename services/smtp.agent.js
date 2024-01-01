@@ -533,11 +533,14 @@ module.exports = {
         async onClose(session) {
             // remove session from session map
             this.sessionMap.delete(session.sessionID);
+            if (session.sessionID) {
+                // close session
+                await this.broker.call("v2.emails.sessions.close", {
+                    id: session.sessionID,
+                });
+            }
 
-            // close session
-            await this.broker.call("v2.emails.sessions.close", {
-                id: session.sessionID,
-            });
+            this.logger.info(`closed session ${session.sessionID}`);
         },
 
         /** 

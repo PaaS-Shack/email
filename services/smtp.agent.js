@@ -426,13 +426,8 @@ module.exports = {
          * @returns {Promise}
          */
         async onData(stream, session, callback) {
-            // write stream to file
-            const tmpFile = await this.writeStreamToTmpFile(stream);
-
-            this.logger.info(`stored stream to ${tmpFile}`);
-
             // upload stream to s3
-            const s3Object = await this.storeMessageStream(fs.createReadStream(tmpFile));
+            const s3Object = await this.storeMessageStream(stream);
 
             this.logger.info(`uploaded stream to s3://${s3Object.bucket}/${s3Object.name}`);
 
@@ -458,9 +453,6 @@ module.exports = {
             });
 
             this.logger.info(`created envelope ${envelope.id}`);
-
-            // unlink tmp file
-            await fs.unlink(tmpFile);
 
             // clear session from and to
             session.from = null;

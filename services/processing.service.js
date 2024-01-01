@@ -300,6 +300,11 @@ module.exports = {
                             return reject(err);
                         }
 
+                        // attachment release
+                        if (attachment.release) {
+                            attachment.release();
+                        }
+
                         return resolve({
                             bucket,
                             name,

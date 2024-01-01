@@ -36,7 +36,6 @@ module.exports = {
      * @property {ConfigLoader} ConfigLoader - Config loader mixin
      */
     mixins: [
-        DbService({}),
         ConfigLoader([
             'emails.**'
         ]),

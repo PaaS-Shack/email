@@ -13,7 +13,8 @@ const { Context } = require("moleculer");
 
 const MailParser = require('mailparser').MailParser;
 const { v4: uuidv4 } = require('uuid');
-const { name } = require("cron-mixin");
+
+const S3Mixin = require("../mixins/s3-store.mixin");
 
 /**
  * This service has no database.  It is used to process raw emails that are stored in s3.
@@ -38,6 +39,7 @@ module.exports = {
         ConfigLoader([
             'emails.**'
         ]),
+        S3Mixin
     ],
 
     /**
@@ -182,7 +184,7 @@ module.exports = {
             // process metadata
             await this.processMetadata(ctx, email, envelope);
 
-            
+
 
             return email;
         },

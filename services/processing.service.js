@@ -100,13 +100,13 @@ module.exports = {
     events: {
         async "emails.envelopes.created"(ctx) {
             const envelope = ctx.params.data;
-            this.logger.info("emails.envelope.created", envelope);
+            this.logger.info(`Envelope created ${envelope.id}`);
 
             // process raw email
             this.process(ctx, envelope).then(email => {
-                this.logger.info("emails.processing", email);
+                this.logger.info(`Email processed ${envelope.id} ${email.id}`);
             }).catch(err => {
-                this.logger.error("emails.processing", err);
+                this.logger.error(`Error processing email ${envelope.id} ${err.message}`);
             });
         }
     },
@@ -159,7 +159,7 @@ module.exports = {
                             email.attachments.push(attachment.id);
                         })
                         .catch(err => {
-                            this.logger.error(`Error processing attachment ${data.filename}`, err);
+                            this.logger.error(`Error processing attachment ${data.filename} ${err.message}`);
                         })
                 } else if (data.type === 'text') {
                     email.body = data.text;
@@ -230,7 +230,7 @@ module.exports = {
             // email mime version
             email.mimeVersion = email.headers.get('mime-version');
 
-            // email content type
+            // email content type 
             email.contentType = email.headers.get('content-type');
             if (email.contentType && email.contentType.value) {
                 email.contentType = email.contentType.value;
@@ -239,7 +239,7 @@ module.exports = {
             // email content transfer encoding
             email.contentTransferEncoding = email.headers.get('content-transfer-encoding');
 
-
+            this.logger.info(`Processing email metadata ${envelope.id} ${email.messageId}`)
         },
 
         /**
@@ -277,6 +277,8 @@ module.exports = {
                 id: envelope.id,
                 attachment: attachmentEntity.id,
             });
+
+            this.logger.info(`Processing attachment ${envelope.id} ${attachment.filename}`);
 
             return attachmentEntity;
         },
@@ -416,6 +418,8 @@ module.exports = {
                     email.replyTo.push(addresses.id);
                 }
             }
+
+            this.logger.info(`Processing email addresses ${envelope.id} ${email.messageId}`)
 
         },
 

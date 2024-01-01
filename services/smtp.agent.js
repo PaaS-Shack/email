@@ -121,8 +121,8 @@ module.exports = {
                     needsUpgrade: portNumber === 465 && !this.config["emails.smtp.secured"],
                     port: portNumber,
 
-                    onMailFrom: (address, session, callback) => this.onMailFrom(address, session, callback),
-                    onRcptTo: (address, session, callback) => this.onRcptTo(address, session, callback),
+                    onMailFrom: (address, session, callback) => this.onMailFrom(address.address, session, callback),
+                    onRcptTo: (address, session, callback) => this.onRcptTo(address.address, session, callback),
                     onAuth: (auth, session, callback) => this.onAuth(auth, session, callback),
                     onData: (stream, session, callback) => this.onData(stream, session, callback),
                     onClose: (session) => this.onClose(session),

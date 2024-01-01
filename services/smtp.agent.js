@@ -69,6 +69,7 @@ module.exports = {
             "emails.smtp.socketTimeout": 60 * 1000,
             "emails.smtp.maxRecipients": 100,
             "emails.s3.bucket": "emails",
+            "emails.smtp.name": "Loon Email Server",
         }
     },
 
@@ -246,51 +247,25 @@ module.exports = {
             let serverConfig = {
                 // log to console
                 logger: this.config["emails.smtp.logging"] ? defaultLogger : false,
-
                 name: this.config["emails.smtp.hostname"] || os.hostname(),
-
-                banner: 'Welcome to ' + this.name + (!this.config["emails.smtp.disableVersionString"] ? '! [' + packageData.name + '/' + packageData.version + ']' : ''),
-
                 size: this.config["emails.smtp.maxSize"],
-
-                // No authentication at this point
-                disabledCommands: [].concat(!this.config["emails.smtp.authentication"] ? 'AUTH' : []).concat(!this.config["emails.smtp.starttls"] ? 'STARTTLS' : []),
-
-                // secure: this.config["emails.smtp.secure"],
-                // needsUpgrade: this.config["emails.smtp.secure"] && !this.config["emails.smtp.secured"],
-
-                // Socket timeout is set to 10 minutes. This is needed to give enought time
-                // for the server to process large recipients lists
+                disabledCommands: [],
                 socketTimeout: this.config["emails.smtp.socketTimeout"] || 10 * 60 * 1000,
-
             };
 
-            // apply additional config options (if set)
-            for (let key of [
-                'hideSize',
-                'authMethods',
-                'authOptional',
-                'disabledCommands',
-                'hideSTARTTLS',
-                'hidePIPELINING',
-                'hide8BITMIME',
-                'hideSMTPUTF8',
-                'allowInsecureAuth',
-                'disableReverseLookup',
-                'sniOptions',
-                'maxClients',
-                'useProxy',
-                'useXClient',
-                'useXForward',
-                'lmtp',
-                'closeTimeout',
-                //'secured',
-                'banner'
-            ]) {
-                key = `emails.smtp.${key}`;
-                if (this.config[key]) {
-                    serverConfig[key] = this.config[key];
-                }
+            if (!this.config["emails.smtp.authentication"]) {
+                serverConfig.disabledCommands.push('AUTH')
+            }
+
+            if (!this.config["emails.smtp.starttls"]) {
+                serverConfig.hideSTARTTLS = true;
+                serverConfig.disabledCommands.push('STARTTLS');
+            }
+
+            serverConfig.banner = `Welcome to ${this.config["emails.smtp.name"] || os.hostname()} STMP Server`;
+
+            if (!this.config["emails.smtp.disableVersionString"]){
+                serverConfig.banner += ` (${packageData.name} v${packageData.version})`;
             }
 
             // sni callback

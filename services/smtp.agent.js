@@ -185,7 +185,7 @@ module.exports = {
                 });
 
                 server.on('error', err => {
-                    this.logger.error(err);
+                    this.logger.error(`server error: ${err.message}`);
                 });
 
                 // start server
@@ -364,6 +364,8 @@ module.exports = {
                 cert,
             });
 
+            this.logger.info(`created tls context for ${servername}`);
+
             // add context to sni map
             this.sniMap.set(servername, context);
 
@@ -392,7 +394,16 @@ module.exports = {
             // lookup address
             const addressObject = await this.broker.call("v2.emails.addresses.lookup", {
                 address,
-            });
+            })
+                .catch(async (err) => {
+                    this.logger.info(`${session.sessionID} address ${address} not found, ${err.message}`);
+                });
+
+            // check if address is found
+            if (!addressObject) {
+                // return address error
+                return callback(new Error('address not found'));
+            }
 
             // add address to session
             await this.broker.call("v2.emails.sessions.addFrom", {
@@ -400,7 +411,7 @@ module.exports = {
                 address: addressObject.id,
             });
 
-            this.logger.info(`from: ${addressObject.id}`);
+            this.logger.info(`${session.sessionID} from: ${addressObject.name} <${addressObject.address}> (${addressObject.id})`);
 
             // add address to session 
             session.from = addressObject.id;
@@ -433,15 +444,27 @@ module.exports = {
             // lookup address
             const addressObject = await this.broker.call("v2.emails.addresses.lookup", {
                 address,
-            });
+            })
+                .catch(async (err) => {
+                    this.logger.info(`${session.sessionID} address ${address} not found, ${err.message}`);
+                });
+
+            // check if address is found
+            if (!addressObject) {
+                // return address error
+                return callback(new Error('address not found'));
+            }
 
             // add address to session
             await this.broker.call("v2.emails.sessions.addTo", {
                 id: session.sessionID,
                 address: addressObject.id,
-            });
+            })
+                .catch(async (err) => {
+                    this.logger.info(`${session.sessionID} address ${address} not found, ${err.message}`);
+                });
 
-            this.logger.info(`to: ${addressObject.id}`);
+            this.logger.info(`${session.sessionID} to: ${addressObject.name} <${addressObject.address}> (${addressObject.id})`);
 
             // add address to session
             session.to.push(addressObject.id);
@@ -482,7 +505,7 @@ module.exports = {
             // upload stream to s3
             const s3Object = await this.storeMessageStream(stream);
 
-            this.logger.info(`uploaded stream to s3://${s3Object.bucket}/${s3Object.name}`);
+            this.logger.info(`${session.sessionID} uploaded stream to s3://${s3Object.bucket}/${s3Object.name}`);
 
             // from address
             const from = session.from;
@@ -505,7 +528,7 @@ module.exports = {
                 envelope: envelope.id,
             });
 
-            this.logger.info(`created envelope ${envelope.id}`);
+            this.logger.info(`${session.sessionID} created envelope ${envelope.id}`);
 
             // clear session from and to
             session.from = null;
@@ -539,7 +562,7 @@ module.exports = {
                 });
             }
 
-            this.logger.info(`closed session ${session.sessionID}`);
+            this.logger.info(`${session.sessionID} closed session`);
         },
 
         /** 
@@ -563,7 +586,7 @@ module.exports = {
                 openingCommand: session.openingCommand,
             });
 
-            this.logger.info(`created session ${sessionObject.id}`);
+            this.logger.info(`${sessionObject.id} created session for ${sessionObject.remoteAddress}:${sessionObject.remotePort} as ${sessionObject.clientHostname}`);
 
             // add sessionID to session object
             session.sessionID = sessionObject.id;

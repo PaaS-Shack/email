@@ -136,7 +136,6 @@ module.exports = {
             subject: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // body
@@ -144,28 +143,24 @@ module.exports = {
                 type: "string",
                 required: false,
                 hidden: true,// hide from api
-                default: ""
             },
 
             // date
             date: {
                 type: "date",
                 required: false,
-                default: null
             },
 
             // message id
             messageId: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // hash
             hash: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // priority
@@ -179,35 +174,30 @@ module.exports = {
             xPriority: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // userAgent
             userAgent: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // mimeVersion
             mimeVersion: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // contentType
             contentType: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // contentTransferEncoding
             contentTransferEncoding: {
                 type: "string",
                 required: false,
-                default: ""
             },
 
             // attachments

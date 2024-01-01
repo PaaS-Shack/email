@@ -443,7 +443,7 @@ module.exports = {
                 to,
                 bucket: s3Object.bucket,
                 key: s3Object.name,
-                size: s3Object.size,
+                size: 0
             });
 
             // add envelope to session

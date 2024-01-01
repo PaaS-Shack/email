@@ -92,16 +92,24 @@ module.exports = {
             };
 
             return new Promise((resolve, reject) => {
-
-                this.s3.putObject(bucket, name, stream, null, metadata, function (err, res) {
+                // put object
+                this.s3.putObject(bucket, name, stream, null, metadata, (err, res) => {
                     if (err) {
                         return reject(err);
                     }
+                    const etag = res.etag;
+                    // get object size
+                    this.s3.statObject(bucket, name, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
 
-                    return resolve({
-                        bucket,
-                        name,
-                        etag: res.etag,
+                        return resolve({
+                            bucket,
+                            name,
+                            etag,
+                            size: res.size,
+                        });
                     });
                 });
             });

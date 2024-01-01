@@ -289,15 +289,23 @@ module.exports = {
             };
 
             return new Promise((resolve, reject) => {
-                this.s3.putObject(bucket, name, stream, null, metadata, async (err, res) => {
+                this.s3.putObject(bucket, name, attachment.content, null, metadata, (err, res) => {
                     if (err) {
                         return reject(err);
                     }
-                    return resolve({
-                        bucket,
-                        name,
-                        etag: res.etag,
-                        size: res.size,
+                    const etag = res.etag;
+                    // get object size
+                    this.s3.statObject(bucket, name, (err, res) => {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        return resolve({
+                            bucket,
+                            name,
+                            etag,
+                            size: res.size,
+                        });
                     });
                 });
             });

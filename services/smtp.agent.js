@@ -10,6 +10,9 @@ const fs = require("fs").promises;
 const os = require("os");
 const packageData = require("../package.json");
 
+const SMTPServer = require('smtp-server').SMTPServer;
+
+
 /**
  * This is a in bound smtp agent.  It is used to receive emails from the internet
  * and store them in the s3 bucket for processing. 

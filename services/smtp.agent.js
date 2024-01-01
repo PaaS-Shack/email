@@ -304,7 +304,7 @@ module.exports = {
             // add address to session
             await this.broker.call("v2.emails.sessions.addFrom", {
                 id: session.sessionID,
-                from: addressObject.id,
+                address: addressObject.id,
             });
 
             // add address to session 
@@ -343,7 +343,7 @@ module.exports = {
             // add address to session
             await this.broker.call("v2.emails.sessions.addTo", {
                 id: session.sessionID,
-                to: addressObject.id,
+                address: addressObject.id,
             });
 
             // add address to session

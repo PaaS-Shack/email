@@ -7,6 +7,7 @@ const { MoleculerClientError, MoleculerServerError } = require("moleculer").Erro
 const S3Mixin = require("../mixins/s3-store.mixin");
 
 const fs = require("fs").promises;
+const tls = require("tls");
 const os = require("os");
 const packageData = require("../package.json");
 
@@ -282,6 +283,43 @@ module.exports = {
         },
 
         /**
+         * sni callback
+         * 
+         * @param {String} servername - server name
+         * @param {Function} callback - callback function
+         * 
+         * @returns {Promise}
+         */
+        async SNICallback(servername, callback) {
+            // check servername
+            if (!servername) {
+                return callback(new Error('invalid servername'));
+            }
+
+            // check sni map cache
+            if (this.sniMap.has(servername)) {
+                return callback(null, this.sniMap.get(servername));
+            }
+
+            // resolve key and cert
+            const [key, ca, cert] = await this.resolveKeyCert(servername);
+
+            // create tls context
+            const context = tls.createSecureContext({
+                key,
+                ca,
+                cert,
+            });
+
+            // add context to sni map
+            this.sniMap.set(servername, context);
+
+            // callback with context
+            callback(null, context);
+        },
+
+
+        /**
          * on mail from event handler
          * If address is invalid, callback with an error. Otherwise, return null.
          * Lookup address in the addressess service. If address is not found, cerate a new address.
@@ -357,7 +395,7 @@ module.exports = {
 
             // check blacklist is enabled
             if (this.config["emails.smtp.blacklist"]) {
-               //
+                //
             }
 
             // callback with null
@@ -430,7 +468,7 @@ module.exports = {
 
             // check blacklist is enabled
             if (this.config["emails.smtp.blacklist"]) {
-               // TODO: check envelope is valid
+                // TODO: check envelope is valid
             }
 
 

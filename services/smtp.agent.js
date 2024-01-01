@@ -76,7 +76,60 @@ module.exports = {
      * service actions
      */
     actions: {
+        /**
+         * get server status
+         * 
+         * @returns {Promise}
+         */
+        status: {
+            rest: {
+                method: "GET",
+                path: "/status",
+            },
+            async handler(ctx) {
+                return {
+                    serverMap: this.serverMap,
+                    sniMap: this.sniMap,
+                    sessionMap: this.sessionMap,
+                };
+            }
+        },
 
+        /**
+         * get server config
+         * 
+         * @returns {Promise}
+         */
+        config: {
+            rest: {
+                method: "GET",
+                path: "/config",
+            },
+            async handler(ctx) {
+                return this.config;
+            }
+        },
+
+        /**
+         * restart server
+         * 
+         * @returns {Promise}
+         */
+        restart: {
+            rest: {
+                method: "POST",
+                path: "/restart",
+            },
+            async handler(ctx) {
+                await this.stop();
+                await this.setup();
+                return {
+                    serverMap: this.serverMap,
+                    sniMap: this.sniMap,
+                    sessionMap: this.sessionMap,
+                };
+            }
+        },
     },
 
     /**

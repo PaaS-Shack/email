@@ -143,7 +143,7 @@ module.exports = {
                     if (ctx.params.messageId) {
                         return ctx.params.messageId;
                     } else {
-                        return `<${uuidv4()}@${this.config['emails.outbound.hostname']}>`
+                        return `<${uuidv4()}@${this.config['emails.smtp.hostname']}>`
                     }
                 }
             },

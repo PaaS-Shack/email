@@ -139,7 +139,7 @@ module.exports = {
                 type: "string",
                 required: false,
                 readonly: true,
-                onCreate: ({ ctx }) => {
+                onCreate: function ({ ctx }) {
                     if (ctx.params.messageId) {
                         return ctx.params.messageId;
                     } else {

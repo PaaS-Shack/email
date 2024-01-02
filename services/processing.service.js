@@ -106,7 +106,8 @@ module.exports = {
             this.process(ctx, envelope).then(email => {
                 this.logger.info(`Email processed ${envelope.id} ${email.id}`);
             }).catch(err => {
-                this.logger.error(`Error processing email ${envelope.id} ${err.message}`);
+                this.logger.error(`Error processing email ${envelope.id}`, err);
+
             });
         }
     },
@@ -331,7 +332,7 @@ module.exports = {
                 const addresses = await this.processAddressArray(ctx, from.value);
                 email.from = addresses[0];
             }
-            
+
             // get to address
             const to = email.headers.get('to');
             if (to) {
@@ -342,7 +343,7 @@ module.exports = {
             // get cc address
             const cc = email.headers.get('cc');
             if (cc) {
-               const addresses = await this.processAddressArray(ctx, cc.value);
+                const addresses = await this.processAddressArray(ctx, cc.value);
                 email.cc = addresses;
             }
 

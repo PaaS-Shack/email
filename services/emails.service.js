@@ -3,6 +3,7 @@ const Membership = require("membership-mixin");
 const ConfigLoader = require("config-mixin");
 
 const { MoleculerClientError, MoleculerServerError } = require("moleculer").Errors;
+const { v4: uuidv4 } = require('uuid');
 
 
 /**

@@ -556,7 +556,7 @@ module.exports = {
                 clientHostname: session.clientHostname,
             });
 
-            this.logger.info(`${sessionObject.id} created session for ${sessionObject.remoteAddress}:${sessionObject.remotePort} as ${sessionObject.clientHostname}`);
+            this.logger.info(`${sessionObject.id} created session for ${sessionObject.remoteAddress} as ${sessionObject.clientHostname}`);
 
             // add sessionID to session object
             session.sessionID = sessionObject.id;

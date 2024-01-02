@@ -449,14 +449,14 @@ module.exports = {
          * get attachments
          * 
          * @param {Context} ctx - moleculer context
-         * @param {Array} attachments - attachment ids
+         * @param {Array} attachmentIDss - attachment ids
          * 
          * @returns {Array} attachments - attachments
          */
-        async getAttachments(ctx, attachments) {
+        async getAttachments(ctx, attachmentIDs) {
             // get attachments
             const attachments = await ctx.call('v2.emails.attachments.resolve', {
-                id: attachments
+                id: attachmentIDs
             });
 
             return attachments;

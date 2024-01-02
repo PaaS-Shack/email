@@ -213,22 +213,6 @@ module.exports = {
                 items: "string",
             },
 
-            // envelope - optional SMTP envelope, if auto generated envelope is not suitable (see SMTP envelope for details)
-            envelope: {
-                type: "object",
-                required: false,
-                props: {
-                    from: {
-                        type: "string",
-                        required: true,
-                    },
-                    to: {
-                        type: "string",
-                        required: true,
-                    },
-                },
-            },
-
             // Header options
 
             // priority - Sets message importance headers, either ‘high’, ‘normal’ (default) or ‘low’.

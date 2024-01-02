@@ -141,6 +141,7 @@ module.exports = {
                 headers: {},
                 subject: '',
                 body: '',
+                text: '',
                 date: '',
             };
 
@@ -163,7 +164,8 @@ module.exports = {
                             this.logger.error(`Error processing attachment ${data.filename} ${err.message}`);
                         })
                 } else if (data.type === 'text') {
-                    email.body = data.text;
+                    email.body = data.body;
+                    email.text = data.text;
                 }
 
                 // release data 

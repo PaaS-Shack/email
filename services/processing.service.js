@@ -132,7 +132,7 @@ module.exports = {
             const email = {
                 envelope: envelope.id,
                 attachments: [],
-                from: [],
+                from: null,
                 to: [],
                 cc: [],
                 bcc: [],
@@ -216,28 +216,7 @@ module.exports = {
             email.date = new Date(email.date);
 
             // message id
-            email.messageId = email.headers.get('message-id')
-            // message id hash
-            email.hash = email.messageId.split('@')[0];
-
-            // email priority
-            email.priority = email.headers.get('priority');
-            // email x priority
-            email.xPriority = email.headers.get('x-priority');
-
-            // email user agent
-            email.userAgent = email.headers.get('user-agent');
-            // email mime version
-            email.mimeVersion = email.headers.get('mime-version');
-
-            // email content type 
-            email.contentType = email.headers.get('content-type');
-            if (email.contentType && email.contentType.value) {
-                email.contentType = email.contentType.value;
-            }
-
-            // email content transfer encoding
-            email.contentTransferEncoding = email.headers.get('content-transfer-encoding');
+            email.messageId = email.headers.get('message-id');
 
             this.logger.info(`Processing email metadata ${envelope.id} ${email.messageId}`)
         },
@@ -347,76 +326,39 @@ module.exports = {
         async processAddreses(ctx, email, envelope) {
             // get to address
             const to = email.headers.get('to');
-            if (!to) {
-                throw new Error(`Email has no to address ${envelope.id}`);
-            }
-            // loop through to addresses
-            for (const address of to.value) {
-                // lookup addresses
-                const addresses = await ctx.call("v2.emails.addresses.lookupByEmailAddress", {
-                    address: address.address,
-                });
-
-                email.to.push(...addresses.map((address) => address.id));
+            if (to) {
+                const addresses = await this.processAddressArray(ctx, to.value);
+                email.to = addresses;
             }
             // filter out duplicates
             //email.to = email.to.filter((v, i, a) => a.indexOf(v) === i);
 
             // get from address
             const from = email.headers.get('from');
-            if (!from) {
-                throw new Error(`Email has no from address ${envelope.id}`);
-            }
-            // loop through to addresses
-            for (const address of from.value) {
-                // lookup addresses
-                const addresses = await ctx.call("v2.emails.addresses.lookup", {
-                    address: address.address,
-                    name: address.name,
-                });
-                email.from.push(addresses.id);
+            if (from) {
+                const addresses = await this.processAddressArray(ctx, from.value);
+                email.from = addresses[0];
             }
 
             // get cc address
             const cc = email.headers.get('cc');
             if (cc) {
-                // loop through to addresses
-                for (const address of cc.value) {
-                    // lookup addresses
-                    const addresses = await ctx.call("v2.emails.addresses.lookup", {
-                        address: address.address,
-                        name: address.name,
-                    });
-                    email.cc.push(addresses.id);
-                }
+               const addresses = await this.processAddressArray(ctx, cc.value);
+                email.cc = addresses;
             }
 
             // get bcc address
             const bcc = email.headers.get('bcc');
             if (bcc) {
-                // loop through to addresses
-                for (const address of bcc.value) {
-                    // lookup addresses
-                    const addresses = await ctx.call("v2.emails.addresses.lookup", {
-                        address: address.address,
-                        name: address.name,
-                    });
-                    email.bcc.push(addresses.id);
-                }
+                const addresses = await this.processAddressArray(ctx, bcc.value);
+                email.bcc = addresses;
             }
 
             // get replyTo address
             const replyTo = email.headers.get('reply-to');
             if (replyTo) {
-                // loop through to addresses
-                for (const address of replyTo.value) {
-                    // lookup addresses
-                    const addresses = await ctx.call("v2.emails.addresses.lookup", {
-                        address: address.address,
-                        name: address.name,
-                    });
-                    email.replyTo.push(addresses.id);
-                }
+                const addresses = await this.processAddressArray(ctx, replyTo.value);
+                email.replyTo = addresses;
             }
 
             this.logger.info(`Processing email addresses ${envelope.id} ${email.messageId}`)

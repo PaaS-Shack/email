@@ -68,7 +68,7 @@ module.exports = {
             // envelope id
             envelope: {
                 type: "string",
-                required: true,
+                required: false,
                 populate: {
                     action: "v2.emails.envelopes.get",
                 }
@@ -76,22 +76,21 @@ module.exports = {
 
             // from address
             from: {
-                type: "array",
-                required: false,
-                default: [],
+                type: "string",
+                required: true,
                 populate: {
                     action: "v2.emails.addresses.resolve",
-                }
+                },
             },
 
             // to address
             to: {
                 type: "array",
-                required: false,
-                default: [],
+                required: true,
+                items: "string",
                 populate: {
                     action: "v2.emails.addresses.resolve",
-                }
+                },
             },
 
             // cc address
@@ -99,9 +98,10 @@ module.exports = {
                 type: "array",
                 required: false,
                 default: [],
+                items: "string",
                 populate: {
                     action: "v2.emails.addresses.resolve",
-                }
+                },
             },
 
             // bcc address
@@ -109,45 +109,27 @@ module.exports = {
                 type: "array",
                 required: false,
                 default: [],
+                items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
-                }
-            },
-
-            // replyTo address
-            replyTo: {
-                type: "array",
-                required: false,
-                default: [],
-                populate: {
-                    action: "v2.emails.addresses.get",
-                }
-            },
-
-            // headers
-            headers: {
-                type: "object",
-                required: false,
-                hidden: true,
-                default: {}
+                    action: "v2.emails.addresses.resolve",
+                },
             },
 
             // subject
             subject: {
                 type: "string",
-                required: false,
+                required: true,
             },
 
-            // body
-            body: {
+            // text body
+            text: {
                 type: "string",
-                required: false,
-                hidden: true,// hide from api
+                required: true,
             },
 
-            // date
-            date: {
-                type: "date",
+            // html body
+            html: {
+                type: "string",
                 required: false,
             },
 
@@ -155,60 +137,117 @@ module.exports = {
             messageId: {
                 type: "string",
                 required: false,
+                readonly: true,
+                onCreate: ({ ctx }) => {
+                    if (ctx.params.messageId) {
+                        return ctx.params.messageId;
+                    } else {
+                        return `<${uuidv4()}@${this.config['emails.outbound.hostname']}>`
+                    }
+                }
             },
 
-            // hash
-            hash: {
+            // date
+            date: {
+                type: "number",
+                required: false,
+                readonly: true,
+                onCreate: Date.now
+            },
+
+            // status
+            status: {
                 type: "string",
                 required: false,
+                readonly: true,
+                default: "pending",
+                enum: [
+                    "pending",
+                    "sent",
+                    "failed",
+                    "queued",
+                    "mailbox"
+                ]
             },
 
-            // priority
-            priority: {
+            // error
+            error: {
                 type: "string",
                 required: false,
-                default: ""
+                readonly: true,
             },
 
-            // xPriority
-            xPriority: {
+            // Routing options
+
+            // sender - An email address that will appear on the Sender: field (always prefer from if you’re not sure which one to use)
+            sender: {
                 type: "string",
                 required: false,
+                populate: {
+                    action: "v2.emails.addresses.resolve",
+                },
             },
 
-            // userAgent
-            userAgent: {
-                type: "string",
-                required: false,
-            },
-
-            // mimeVersion
-            mimeVersion: {
-                type: "string",
-                required: false,
-            },
-
-            // contentType
-            contentType: {
-                type: "string",
-                required: false,
-            },
-
-            // contentTransferEncoding
-            contentTransferEncoding: {
-                type: "string",
-                required: false,
-            },
-
-            // attachments
-            attachments: {
+            // replyTo - An email address that will appear on the Reply-To: field
+            replyTo: {
                 type: "array",
                 required: false,
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.attachments.resolve",
-                }
+                    action: "v2.emails.addresses.resolve",
+                },
+            },
+
+            // inReplyTo - The Message-ID this message is replying to
+            inReplyTo: {
+                type: "string",
+                required: false,
+            },
+
+            // references - Message-ID list (an array or space separated string)
+            references: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string",
+            },
+
+            // envelope - optional SMTP envelope, if auto generated envelope is not suitable (see SMTP envelope for details)
+            envelope: {
+                type: "object",
+                required: false,
+                props: {
+                    from: {
+                        type: "string",
+                        required: true,
+                    },
+                    to: {
+                        type: "string",
+                        required: true,
+                    },
+                },
+            },
+
+            // Header options
+
+            // priority - Sets message importance headers, either ‘high’, ‘normal’ (default) or ‘low’.
+            priority: {
+                type: "string",
+                required: false,
+                default: "normal",
+                enum: [
+                    "high",
+                    "normal",
+                    "low",
+                ]
+            },
+
+            // headers - An object or array of additional header fields (e.g. {“X-Key-Name”: “key value”} or [{key: “X-Key-Name”, value: “val1”}, {key: “X-Key-Name”, value: “val2”}]). Read more about custom headers here
+            headers: {
+                type: "object",
+                required: false,
+                default: {},
             },
 
 

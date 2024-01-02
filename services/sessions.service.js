@@ -44,50 +44,14 @@ module.exports = {
 
         fields: {
 
-            // session localAddress
-            localAddress: {
-                type: "string",
-                required: true,
-            },
-
-            // session localPort
-            localPort: {
-                type: "number",
-                required: true,
-            },
-
             // session remoteAddress
             remoteAddress: {
                 type: "string",
                 required: true,
             },
 
-            // session remotePort
-            remotePort: {
-                type: "number",
-                required: true,
-            },
-
             // session clientHostname
             clientHostname: {
-                type: "string",
-                required: false,
-            },
-
-            // session hostNameAppearsAs
-            hostNameAppearsAs: {
-                type: "string",
-                required: false,
-            },
-
-            // session openingCommand
-            openingCommand: {
-                type: "string",
-                required: false,
-            },
-
-            // session transmissionType
-            transmissionType: {
                 type: "string",
                 required: false,
             },
@@ -141,6 +105,13 @@ module.exports = {
                 type: "boolean",
                 required: false,
                 default: false,
+            },
+
+            // session open count
+            openCount: {
+                type: "number",
+                required: false,
+                default: 0,
             },
 
 
@@ -365,11 +336,56 @@ module.exports = {
                     closed: true,
                 });
 
+
+
                 // return session
                 return update;
             }
         },
 
+        /**
+         * open session
+         * 
+         * @actions
+         * @param {String} remoteAddress - remote address
+         * @param {String} clientHostname - client hostname
+         * 
+         * @returns {Object} session - session object
+         */
+        open: {
+            params: {
+                remoteAddress: {
+                    type: "string",
+                    optional: false,
+                },
+                clientHostname: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.resolveSession(ctx, ctx.params.remoteAddress, ctx.params.clientHostname);
+
+                if (session.closed) {
+                    // update session
+                    await this.updateEntity(ctx, {
+                        id: session.id,
+                        closed: false,
+                    });
+                }
+
+                // inc open count
+                const query = {
+                    id: session.id,
+                    $inc: {
+                        openCount: 1,
+                    }
+                };
+
+                return await this.updateEntity(ctx, query, { raw: true });
+            }
+        },
     },
 
     /**
@@ -383,7 +399,36 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * resolve session
+         * 
+         * @param {Object} ctx - context
+         * @param {String} remoteAddress - remote address
+         * @param {String} clientHostname - client hostname
+         * 
+         * @returns {Object} session - session object
+         */
+        async resolveSession(ctx, remoteAddress, clientHostname) {
+            // resolve session
+            let session = await this.findEntity(null, {
+                query: {
+                    remoteAddress,
+                    clientHostname,
+                }
+            });
 
+            // check session
+            if (!session) {
+                // create session
+                session = await this.createSession(ctx, {
+                    remoteAddress,
+                    clientHostname,
+                });
+            }
+
+            // return session
+            return session;
+        },
         /**
          * get sessions
          * 

@@ -551,14 +551,9 @@ module.exports = {
          */
         async onConnect(session, callback) {
 
-            const sessionObject = await this.broker.call("v2.emails.sessions.create", {
-                localAddress: session.localAddress,
-                localPort: session.localPort,
+            const sessionObject = await this.broker.call("v2.emails.sessions.open", {
                 remoteAddress: session.remoteAddress,
-                remotePort: session.remotePort,
                 clientHostname: session.clientHostname,
-                hostNameAppearsAs: session.hostNameAppearsAs,
-                openingCommand: session.openingCommand,
             });
 
             this.logger.info(`${sessionObject.id} created session for ${sessionObject.remoteAddress}:${sessionObject.remotePort} as ${sessionObject.clientHostname}`);

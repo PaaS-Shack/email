@@ -324,20 +324,19 @@ module.exports = {
          * @returns {Promise<Object>} - returns email object
          */
         async processAddreses(ctx, email, envelope) {
-            // get to address
-            const to = email.headers.get('to');
-            if (to) {
-                const addresses = await this.processAddressArray(ctx, to.value);
-                email.to = addresses;
-            }
-            // filter out duplicates
-            //email.to = email.to.filter((v, i, a) => a.indexOf(v) === i);
 
             // get from address
             const from = email.headers.get('from');
             if (from) {
                 const addresses = await this.processAddressArray(ctx, from.value);
                 email.from = addresses[0];
+            }
+            
+            // get to address
+            const to = email.headers.get('to');
+            if (to) {
+                const addresses = await this.processAddressArray(ctx, to.value);
+                email.to = addresses;
             }
 
             // get cc address

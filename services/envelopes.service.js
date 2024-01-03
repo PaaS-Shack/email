@@ -274,6 +274,9 @@ module.exports = {
                 // update session
                 const update = await this.updateEntity(ctx, query, { raw: true });
 
+                // emit processed event
+                await ctx.emit('emails.envelopes.processed', update);   
+
                 // return session
                 return update;
             }

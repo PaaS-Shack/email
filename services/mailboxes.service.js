@@ -81,7 +81,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -101,7 +101,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.messages.get",
+                    action: "v2.emails.messages.resolve",
                 }
             },
 
@@ -247,8 +247,37 @@ module.exports = {
         /**
          * envelope created event
          */
-        async "emails.envelopes.created"(ctx) {
-            const envelope = ctx.params.data;
+        async "emails.envelopes.processed"(ctx) {
+            const envelope = ctx.params;
+
+            // loop to address
+            for (const id of envelope.to) {
+                // lookup mailbox by id
+                const mailbox = await this.findEntities(null, {
+                    query: {
+                        email: id,
+                    },
+                });
+
+                const alias = await this.findEntities(null, {
+                    query: {
+                        alias: id,
+                    },
+                });
+
+                const found = mailbox.concat(alias);
+
+                this.logger.info(`Found ${found.length} mailboxes for ${id}`);
+
+                // loop mailbox
+                for (const box of found) {
+                    // process envelope
+                    await this.processEnvelope(ctx, box, envelope)
+                        .catch(err => {
+                            this.logger.error(`Error processing envelope ${envelope.id} in mailbox ${box.id}`, err);
+                        });
+                }
+            }
         }
     },
 
@@ -256,6 +285,55 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * process envelope
+         * 
+         * @param {Context} ctx
+         * @param {Object} mailbox - mailbox object
+         * @param {Object} envelope - envelope object
+         * 
+         * @returns {Promise}
+         */
+        async processEnvelope(ctx, mailbox, envelope) {
+
+
+            if (!envelope.processed) {
+                // throw error
+                throw new MoleculerClientError("Envelope not processed", 404, "ENVELOPE_NOT_PROCESSED", { id: envelope.id });
+            }
+
+            // get email
+            const email = await ctx.call("v2.emails.find", {
+                query: {
+                    envelope: envelope.id,
+                },
+                fields: ["id", "envelope", "mailbox", "from", "to", "cc", "bcc", "subject"],
+            }).then(res => res[0]);
+
+            // create message
+            const message = await ctx.call("v2.emails.messages.create", {
+                mailbox: mailbox.id,
+                envelope: envelope.id,
+                flags: [],
+                from: email.from,
+                to: email.to,
+                cc: email.cc,
+                bcc: email.bcc,
+                subject: email.subject,
+                recent: true,
+            });
+
+            // add message to mailbox
+            await this.updateEntity(ctx, {
+                id: mailbox.id,
+                $push: {
+                    messages: message.id,
+                }
+            }, { raw: true });
+
+            this.logger.info(`Message ${message.id} created in mailbox ${mailbox.id}`);
+
+        },
         /**
          * lookup mailboxes by email address
          * 

@@ -155,7 +155,6 @@ module.exports = {
             const remoteAddress = session.remoteAddress;
             const clientHostname = session.clientHostname;
 
-
             const valid = {
                 session:{
                     id: session.id,

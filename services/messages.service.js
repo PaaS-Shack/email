@@ -79,10 +79,8 @@ module.exports = {
 
             // email message from
             from: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string",
+                type: "string",
+                required: true,
                 populate: {
                     action: "v2.emails.addresses.get",
                 }

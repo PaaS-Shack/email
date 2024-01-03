@@ -157,6 +157,11 @@ module.exports = {
 
 
             const valid = {
+                session:{
+                    id: session.id,
+                    remoteAddress: session.remoteAddress,
+                    clientHostname: session.clientHostname,
+                },
                 remoteAddress: true,// remote address is valid
                 clientHostname: true,// client hostname is valid
                 resolve: null,// client hostname resolve

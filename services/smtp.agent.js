@@ -600,6 +600,7 @@ module.exports = {
             // check if session is blocked
             if (sessionObject.blocked) {
                 // callback with error
+                this.logger.info(`${sessionObject.id} session blocked`);
                 return callback(new Error('session blocked'));
             }
 

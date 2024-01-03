@@ -120,7 +120,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, seen: false } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, seen: false } });
                 },
             },
 
@@ -130,7 +130,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id } });
                 },
             },
 
@@ -140,7 +140,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, seen: true } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, seen: true } });
                 },
             },
 
@@ -150,7 +150,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, seen: false } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, seen: false } });
                 },
             },
 
@@ -160,7 +160,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, recent: true } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, recent: true } });
                 },
             },
 
@@ -170,7 +170,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, deleted: true } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, deleted: true } });
                 },
             },
 
@@ -180,7 +180,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, draft: true } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, draft: true } });
                 },
             },
 
@@ -190,7 +190,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, flagged: true } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, flagged: true } });
                 },
             },
 
@@ -200,7 +200,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, answered: true } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, answered: true } });
                 },
             },
 
@@ -210,7 +210,7 @@ module.exports = {
                 required: false,
                 readonly: true,
                 get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: params.id, junk: true } });
+                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, junk: true } });
                 },
             },
 

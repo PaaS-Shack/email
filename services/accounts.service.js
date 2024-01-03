@@ -4,6 +4,8 @@ const ConfigLoader = require("config-mixin");
 
 const { MoleculerClientError, MoleculerServerError } = require("moleculer").Errors;
 
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 
 /**
  * this is the email account service
@@ -72,8 +74,13 @@ module.exports = {
             password: {
                 type: "string",
                 required: true,
-                readonly: true,
                 hidden: true,
+                min: 6,
+                max: 60,
+                onCreate: function ({ params }) {
+                    // hash password
+                    return bcrypt.hash(params.password, this.config["emails.accounts.passwordSalt"]);
+                }
             },
 
             // account tags
@@ -128,7 +135,75 @@ module.exports = {
      * service actions
      */
     actions: {
+        /**
+         * authenticate account
+         * 
+         * @actions
+         * @param {String} username - username
+         * @param {String} password - password
+         * 
+         * @returns {Object} account - account object
+         */
+        authenticate: {
+            params: {
+                username: {
+                    type: "string",
+                    optional: false,
+                },
+                password: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get account
+                const account = await this.findEntity(null, {
+                    query: {
+                        username: ctx.params.username,
+                    },
+                    fields: ['id', 'username', 'password'],
+                });
 
+                // check account
+                if (!account) {
+                    throw new MoleculerClientError("Account not found!", 404);
+                }
+
+                // check password
+                const password = await bcrypt.compare(ctx.params.password, account.password);
+                if (!password) {
+                    throw new MoleculerClientError("Wrong password!", 422);
+                }
+
+                // return account
+                return this.resolveEntities(null, { id: account.id });
+            }
+        },
+
+        /**
+         * clean sessions remove all
+         * 
+         * @actions
+         * 
+         * @returns {Number} sessions - deleted sessions count
+         */
+        clean: {
+            async handler(ctx) {
+                // clean sessions
+                const sessions = await this.findEntities(null, {
+                    fields: ['id']
+                });
+
+                const promises = sessions.map((session) => {
+                    return this.removeEntity(ctx, {
+                        id: session.id,
+                    });
+                });
+
+                // return sessions
+                return Promise.all(promises);
+            }
+        }
     },
 
     /**

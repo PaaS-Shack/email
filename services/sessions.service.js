@@ -114,6 +114,20 @@ module.exports = {
                 default: 0,
             },
 
+            // session last open
+            lastOpen: {
+                type: "number",
+                required: false,
+                default: null
+            },
+
+            // session last close
+            lastClose: {
+                type: "number",
+                required: false,
+                default: null
+            },
+
 
             ...DbService.FIELDS,// inject dbservice fields
         },
@@ -180,7 +194,7 @@ module.exports = {
 
                 const query = {
                     id: session.id,
-                    $push: {
+                    $addToSet: {
                         from: address.id,
                     }
                 };
@@ -236,7 +250,7 @@ module.exports = {
 
                 const query = {
                     id: session.id,
-                    $push: {
+                    $addToSet: {
                         to: address.id,
                     }
                 };
@@ -292,7 +306,7 @@ module.exports = {
 
                 const query = {
                     id: session.id,
-                    $push: {
+                    $addToSet: {
                         envelopes: envelope.id,
                     }
                 };
@@ -331,15 +345,14 @@ module.exports = {
                 }
 
                 // update session
-                const update = await this.updateEntity(ctx, {
+                const query = {
                     id: session.id,
-                    closed: true,
-                });
-
-
-
-                // return session
-                return update;
+                    $set: {
+                        closed: true,
+                        lastClose: Date.now(),
+                    }
+                };
+                return this.updateEntity(ctx, query, { raw: true });
             }
         },
 
@@ -367,23 +380,19 @@ module.exports = {
                 // get session
                 const session = await this.resolveSession(ctx, ctx.params.remoteAddress, ctx.params.clientHostname);
 
-                if (session.closed) {
-                    // update session
-                    await this.updateEntity(ctx, {
-                        id: session.id,
-                        closed: false,
-                    });
-                }
-
-                // inc open count
+                // inc open count and update last open
                 const query = {
                     id: session.id,
                     $inc: {
                         openCount: 1,
+                    },
+                    $set: {
+                        lastOpen: Date.now(),
+                        closed: false,
                     }
                 };
 
-                return await this.updateEntity(ctx, query, { raw: true });
+                return this.updateEntity(ctx, query, { raw: true });
             }
         },
     },

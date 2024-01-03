@@ -176,8 +176,8 @@ module.exports = {
                     needsUpgrade: portNumber === 465 && !this.config["emails.smtp.secured"],
                     port: portNumber,
 
-                    onMailFrom: (address, session, callback) => this.onMailFrom(address.address, session, callback),
-                    onRcptTo: (address, session, callback) => this.onRcptTo(address.address, session, callback),
+                    onMailFrom: (address, session, callback) => this.onMailFrom(address, session, callback),
+                    onRcptTo: (address, session, callback) => this.onRcptTo(address, session, callback),
                     onAuth: (auth, session, callback) => this.onAuth(auth, session, callback),
                     onData: (stream, session, callback) => this.onData(stream, session, callback),
                     onClose: (session) => this.onClose(session),
@@ -264,7 +264,7 @@ module.exports = {
 
             serverConfig.banner = `Welcome to ${this.config["emails.smtp.name"] || os.hostname()} STMP Server`;
 
-            if (!this.config["emails.smtp.disableVersionString"]){
+            if (!this.config["emails.smtp.disableVersionString"]) {
                 serverConfig.banner += ` (${packageData.name} v${packageData.version})`;
             }
 
@@ -360,7 +360,7 @@ module.exports = {
          * 
          * @returns {Promise}
          */
-        async onMailFrom(address, session, callback) {
+        async onMailFrom({ address, name }, session, callback) {
             // validate address
             if (!address) {
                 return callback(new Error('invalid address'));
@@ -369,6 +369,7 @@ module.exports = {
             // lookup address
             const addressObject = await this.broker.call("v2.emails.addresses.lookup", {
                 address,
+                name
             })
                 .catch(async (err) => {
                     this.logger.info(`${session.sessionID} address ${address} not found, ${err.message}`);
@@ -410,7 +411,7 @@ module.exports = {
          * 
          * @returns {Promise}
          */
-        async onRcptTo(address, session, callback) {
+        async onRcptTo({ address, name }, session, callback) {
             // validate address
             if (!address) {
                 return callback(new Error('invalid address'));
@@ -419,6 +420,7 @@ module.exports = {
             // lookup address
             const addressObject = await this.broker.call("v2.emails.addresses.lookup", {
                 address,
+                name
             })
                 .catch(async (err) => {
                     this.logger.info(`${session.sessionID} address ${address} not found, ${err.message}`);
@@ -463,7 +465,30 @@ module.exports = {
          * @returns {Promise}
          */
         async onAuth(auth, session, callback) {
+            // check authentication is enabled
+            if (!this.config["emails.smtp.authentication"]) {
+                return callback(new Error('authentication disabled'));
+            }
 
+            // check username and password
+            const user=await ctx.call("v2.emails.accounts.authenticate", {
+                username: auth.username,
+                password: auth.password,
+            })
+                .catch(async (err) => {
+                    this.logger.info(`${session.sessionID} authentication failed, ${err.message}`);
+                });
+
+            // check if user is found
+            if (!user) {
+                // return address error
+                return callback(new Error('authentication failed'));
+            }
+
+            // callback with null
+            callback(null, {
+                user: user.id,
+            });
         },
 
         /**
@@ -556,7 +581,7 @@ module.exports = {
                 clientHostname: session.clientHostname,
             });
 
-            this.logger.info(`${sessionObject.id} created session for ${sessionObject.remoteAddress} as ${sessionObject.clientHostname}`);
+            this.logger.info(`${sessionObject.id} opened session for ${sessionObject.remoteAddress} as ${sessionObject.clientHostname}`);
 
             // add sessionID to session object
             session.sessionID = sessionObject.id;
@@ -570,6 +595,12 @@ module.exports = {
 
             if (this.config["emails.smtp.blacklist"]) {
                 // TODO: check sessionObject is valid
+            }
+
+            // check if session is blocked
+            if (sessionObject.blocked) {
+                // callback with error
+                return callback(new Error('session blocked'));
             }
 
             // callback with null
@@ -587,6 +618,10 @@ module.exports = {
          */
         async onSecure(socket, session, callback) {
 
+            this.logger.info(`${session.sessionID} secure connection`);
+
+            // callback with null
+            callback(null);
         },
     },
 

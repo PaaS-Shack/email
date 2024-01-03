@@ -397,6 +397,13 @@ module.exports = {
                 //
             }
 
+            // check if address is blocked
+            if (addressObject.blocked) {
+                // callback with error
+                this.logger.info(`${session.sessionID} address ${address} blocked`);
+                return callback(new Error('address blocked'));
+            }
+
             // callback with null
             callback(null);
         },
@@ -449,6 +456,12 @@ module.exports = {
             // check blacklist is enabled
             if (this.config["emails.smtp.blacklist"]) {
                 //
+            }
+            // check if address is blocked
+            if (addressObject.blocked) {
+                // callback with error
+                this.logger.info(`${session.sessionID} address ${address} blocked`);
+                return callback(new Error('address blocked'));
             }
 
             // callback with null

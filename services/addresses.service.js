@@ -186,6 +186,13 @@ module.exports = {
                 }
             },
 
+            // email address blocked
+            blocked: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],

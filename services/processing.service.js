@@ -155,33 +155,38 @@ module.exports = {
             const remoteAddress = session.remoteAddress;
             const clientHostname = session.clientHostname;
 
-            // check remote address for their hostname
-            const remoteAddressResult = await ctx.call("v1.utils.dns.reverse", { ip: remoteAddress })
-                .then(result => {
-                    return result[0];
-                });
-            // check client hostname for their ip
-            const clientHostnameResult = await ctx.call("v1.utils.dns.resolve", { host: clientHostname })
-                .then(result => {
-                    return result[0];
-                });
 
             const valid = {
-                remoteAddress: false,
-                clientHostname: false,
-                remoteAddressResult,
-                clientHostnameResult,
+                remoteAddress: true,// remote address is valid
+                clientHostname: true,// client hostname is valid
+                resolve: null,// client hostname resolve
+                reverse: null,// remote address reverse
             };
 
-            if (clientHostnameResult === remoteAddress) {
-                valid.remoteAddress = true;
+            // check client hostname starts with "[" and ends with "]"
+            if (clientHostname.startsWith("[") && clientHostname.endsWith("]")) {
+                valid.clientHostname = false;
+                // strip brackets
+                valid.resolve = clientHostname.slice(1, -1);
             }
 
-            if (remoteAddressResult === clientHostname) {
-                valid.clientHostname = true;
+
+
+            // check remote address for their hostname
+            valid.reverse = await ctx.call("v1.utils.dns.reverse", { ip: remoteAddress })
+                .then(result => {
+                    return result[0];
+                });
+
+
+
+            if (valid.clientHostname) {
+                // check client hostname for their ip
+                valid.resolve = await ctx.call("v1.utils.dns.resolve", { host: clientHostname })
+                    .then(result => {
+                        return result[0];
+                    });
             }
-
-
 
             return valid;
         },

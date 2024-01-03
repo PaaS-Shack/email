@@ -171,13 +171,15 @@ module.exports = {
             }
 
 
-
             // check remote address for their hostname
             valid.reverse = await ctx.call("v1.utils.dns.reverse", { ip: remoteAddress })
                 .then(result => {
                     return result[0];
                 });
 
+            if (valid.reverse !== clientHostname) {
+                valid.remoteAddress = false;
+            }
 
 
             if (valid.clientHostname) {
@@ -186,6 +188,10 @@ module.exports = {
                     .then(result => {
                         return result[0];
                     });
+
+                if (valid.resolve !== remoteAddress) {
+                    valid.clientHostname = false;
+                }
             }
 
             return valid;

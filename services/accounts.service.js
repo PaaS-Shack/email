@@ -74,12 +74,11 @@ module.exports = {
             password: {
                 type: "string",
                 required: true,
-                hidden: true,
                 min: 6,
                 max: 60,
                 onCreate: function ({ params }) {
                     // hash password
-                    return bcrypt.hash(params.password, this.config["emails.accounts.passwordSalt"]);
+                    return bcrypt.hash(params.password, this.config["emails.accounts.passwordIterations"]);
                 }
             },
 

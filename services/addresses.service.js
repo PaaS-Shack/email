@@ -489,7 +489,7 @@ module.exports = {
         /**
          * on envelope created, lookup email addressess
          */
-        async "v2.emails.envelopes.created"(ctx) {
+        async "emails.envelopes.created"(ctx) {
             // get envelope
             const envelope = ctx.params.data;
 

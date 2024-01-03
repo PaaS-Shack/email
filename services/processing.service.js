@@ -66,6 +66,33 @@ module.exports = {
      */
     actions: {
         /**
+         * check session remoteAddress and clientHostname match though dns lookups
+         * 
+         * @actions
+         * @param {String} id - session id
+         * 
+         * @returns {Object} - returns session object
+         */
+        checkSession: {
+            params: {
+                id: {
+                    type: "string",
+                    required: true,
+                }
+            },
+            async handler(ctx) {
+                const id = ctx.params.id;
+
+                // get session
+                const session = await ctx.call("v2.emails.sessions.resolve", { id });
+
+                // check session
+                const result = await this.checkSession(ctx, session);
+
+                return result;
+            }
+        },
+        /**
          * process envelope
          * 
          * @actions
@@ -116,6 +143,48 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * check session remoteAddress and clientHostname match though dns lookups
+         * 
+         * @param {Object} ctx - moleculer context
+         * @param {Object} session - session object
+         * 
+         * @returns {Promise<Object>} - returns session object
+         */
+        async checkSession(ctx, session) {
+            const remoteAddress = session.remoteAddress;
+            const clientHostname = session.clientHostname;
+
+            // check remote address for their hostname
+            const remoteAddressResult = await ctx.call("v1.utils.dns.reverse", { ip: remoteAddress })
+                .then(result => {
+                    return result[0];
+                });
+            // check client hostname for their ip
+            const clientHostnameResult = await ctx.call("v1.utils.dns.resolve", { host: clientHostname })
+                .then(result => {
+                    return result[0];
+                });
+
+            const valid = {
+                remoteAddress: false,
+                clientHostname: false,
+                remoteAddressResult,
+                clientHostnameResult,
+            };
+
+            if (clientHostnameResult === remoteAddress) {
+                valid.remoteAddress = true;
+            }
+
+            if (remoteAddressResult === clientHostname) {
+                valid.clientHostname = true;
+            }
+
+
+
+            return valid;
+        },
         /**
          * Process raw email
          * 

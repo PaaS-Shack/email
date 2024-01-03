@@ -395,6 +395,31 @@ module.exports = {
                 return this.updateEntity(ctx, query, { raw: true });
             }
         },
+
+        /**
+         * clean sessions remove all
+         * 
+         * @actions
+         * 
+         * @returns {Number} sessions - deleted sessions count
+         */
+        clean: {
+            async handler(ctx) {
+                // clean sessions
+                const sessions = await this.findEntities(null, {
+                    fields: ['id']
+                });
+
+                const promises = sessions.map((session) => {
+                    return this.removeEntity(ctx, {
+                        id: session.id,
+                    });
+                });
+
+                // return sessions
+                return Promise.all(promises);
+            }
+        }
     },
 
     /**

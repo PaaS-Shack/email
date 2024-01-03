@@ -404,6 +404,78 @@ module.exports = {
         },
 
         /**
+         * block session
+         * 
+         * @actions
+         * @param {String} id - session id
+         * 
+         * @returns {Object} session - session object
+         */
+        block: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.getSessions(ctx, ctx.params.id);
+
+                // check session
+                if (!session) {
+                    // throw error
+                    throw new MoleculerClientError("Session not found", 404, "SESSION_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // update session
+                const query = {
+                    id: session.id,
+                    $set: {
+                        blocked: true,
+                    }
+                };
+                return this.updateEntity(ctx, query, { raw: true });
+            }
+        },
+
+        /**
+         * unblock session
+         * 
+         * @actions
+         * @param {String} id - session id
+         * 
+         * @returns {Object} session - session object
+         */
+        unblock: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.getSessions(ctx, ctx.params.id);
+
+                // check session
+                if (!session) {
+                    // throw error
+                    throw new MoleculerClientError("Session not found", 404, "SESSION_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // update session
+                const query = {
+                    id: session.id,
+                    $set: {
+                        blocked: false,
+                    }
+                };
+                return this.updateEntity(ctx, query, { raw: true });
+            }
+        },
+
+        /**
          * clean sessions remove all
          * 
          * @actions

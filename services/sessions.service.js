@@ -200,7 +200,7 @@ module.exports = {
                 };
 
                 // update session
-                const update = await this.updateEntity(ctx, query);
+                const update = await this.updateEntity(ctx, query, { raw: true });
 
                 // return session
                 return update;
@@ -256,7 +256,7 @@ module.exports = {
                 };
 
                 // update session
-                const update = await this.updateEntity(ctx, query);
+                const update = await this.updateEntity(ctx, query, { raw: true });
 
                 // return session
                 return update;
@@ -312,7 +312,7 @@ module.exports = {
                 };
 
                 // update session
-                const update = await this.updateEntity(ctx, query);
+                const update = await this.updateEntity(ctx, query, { raw: true });
 
                 // return session
                 return update;

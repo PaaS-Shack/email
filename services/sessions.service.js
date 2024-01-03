@@ -128,6 +128,13 @@ module.exports = {
                 default: null
             },
 
+            // sessions is blocked
+            blocked: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
 
             ...DbService.FIELDS,// inject dbservice fields
         },

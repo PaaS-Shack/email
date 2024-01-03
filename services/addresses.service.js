@@ -127,7 +127,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.messages.get",
+                    action: "v2.emails.messages.resolve",
                 }
             },
 
@@ -138,7 +138,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.mailboxes.get",
+                    action: "v2.emails.mailboxes.resolve",
                 }
             },
 
@@ -149,7 +149,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.accounts.get",
+                    action: "v2.emails.accounts.resolve",
                 }
             },
 
@@ -160,7 +160,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.attachments.get",
+                    action: "v2.emails.attachments.resolve",
                 }
             },
 
@@ -171,7 +171,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.contacts.get",
+                    action: "v2.emails.contacts.resolve",
                 }
             },
 
@@ -182,7 +182,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.envelopes.get",
+                    action: "v2.emails.envelopes.resolve",
                 }
             },
 
@@ -268,6 +268,195 @@ module.exports = {
         },
 
         /**
+         * add mailbox to email address
+         * 
+         * @actions
+         * @param {String} id - email address id
+         * @param {String} mailbox - mailbox id
+         * 
+         * @returns {Object} email address
+         */
+        addMailbox: {
+            rest: {
+                method: "POST",
+                path: "/:id/mailbox",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                mailbox: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get email address
+                const address = await this.resolveAddress(ctx, ctx.params.id);
+
+                // check address
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Email address not found.", 404, "ADDRESS_NOT_FOUND");
+                }
+
+                // get mailbox
+                const mailbox = await ctx.call("v2.emails.mailboxes.resolve", {
+                    id: ctx.params.mailbox,
+                });
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found.", 404, "MAILBOX_NOT_FOUND");
+                }
+
+                // add mailbox
+                const query = {
+                    id: address.id,
+                    $addToSet: {
+                        mailboxes: ctx.params.mailbox,
+                    }
+                };
+
+                // update address
+                return this.updateEntity(ctx, query, { raw: true });
+            }
+        },
+
+        /**
+         * remove mailbox from email address
+         * 
+         * @actions
+         * @param {String} id - email address id
+         * @param {String} mailbox - mailbox id
+         * 
+         * @returns {Object} email address
+         */
+        removeMailbox: {
+            rest: {
+                method: "DELETE",
+                path: "/:id/mailbox",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                mailbox: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get email address
+                const address = await this.resolveAddress(ctx, ctx.params.id);
+
+                // check address
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Email address not found.", 404, "ADDRESS_NOT_FOUND");
+                }
+
+                // remove mailbox
+                const query = {
+                    id: address.id,
+                    $pull: {
+                        mailboxes: ctx.params.mailbox,
+                    }
+                };
+
+                // update address
+                return this.updateEntity(ctx, query, { raw: true });
+            }
+        },
+
+        /**
+         * block email address
+         * 
+         * @actions
+         * @param {String} id - email address id
+         * 
+         * @returns {Object} email address
+         */
+        block: {
+            rest: {
+                method: "POST",
+                path: "/:id/block",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get email address
+                const address = await this.resolveAddress(ctx, ctx.params.id);
+
+                // check address
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Email address not found.", 404, "ADDRESS_NOT_FOUND");
+                }
+
+                // block address
+                const query = {
+                    id: address.id,
+                    $set: {
+                        blocked: true,
+                    }
+                };
+
+                // update address
+                return this.updateEntity(ctx, query, { raw: true });
+            }
+        },
+
+        /**
+         * unblock email address
+         * 
+         * @actions
+         * @param {String} id - email address id
+         * 
+         * @returns {Object} email address
+         */
+        unblock: {
+            rest: {
+                method: "POST",
+                path: "/:id/unblock",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get email address
+                const address = await this.resolveAddress(ctx, ctx.params.id);
+
+                // check address
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Email address not found.", 404, "ADDRESS_NOT_FOUND");
+                }
+
+                // block address
+                const query = {
+                    id: address.id,
+                    $set: {
+                        blocked: false,
+                    }
+                };
+
+                // update address
+                return this.updateEntity(ctx, query, { raw: true });
+            }
+        },
+
+        /**
          * clean sessions remove all
          * 
          * @actions
@@ -297,6 +486,27 @@ module.exports = {
      * service events
      */
     events: {
+        /**
+         * on envelope created, lookup email addressess
+         */
+        async "v2.emails.envelopes.created"(ctx) {
+            // get envelope
+            const envelope = ctx.params.data;
+
+            // get to addresses
+            const addresses = await this.resolveEntities(null, {
+                id: envelope.to,
+            });
+
+            // check addresses for mailboxes
+            const mailboxes = addresses.filter((address) => {
+                return address.mailboxes.length > 0;
+            });
+
+            // check mailboxes
+            this.logger.info("Mailboxes", mailboxes);
+
+        },
 
     },
 
@@ -304,6 +514,19 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * resolve email address by id
+         * 
+         * @param {Context} ctx - molecularjs context
+         * @param {String} id - email address id
+         * 
+         * @returns email address
+         */
+        async resolveAddress(ctx, id) {
+            return this.resolveEntities(null, {
+                id,
+            });
+        },
         /**
          * get addresess by email address
          * 

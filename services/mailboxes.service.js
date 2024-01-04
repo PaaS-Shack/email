@@ -114,105 +114,6 @@ module.exports = {
                 }
             },
 
-            // mailbox unread messages
-            unread: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, seen: false } });
-                },
-            },
-
-            // mailbox total messages
-            total: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id } });
-                },
-            },
-
-            // mailbox seen messages
-            seen: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, seen: true } });
-                },
-            },
-
-            // mailbox unseen messages
-            unseen: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, seen: false } });
-                },
-            },
-
-            // mailbox recent messages
-            recent: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, recent: true } });
-                },
-            },
-
-            // mailbox deleted messages
-            deleted: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, deleted: true } });
-                },
-            },
-
-            // mailbox draft messages
-            draft: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, draft: true } });
-                },
-            },
-
-            // mailbox flagged messages
-            flagged: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, flagged: true } });
-                },
-            },
-
-            // mailbox answered messages
-            answered: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, answered: true } });
-                },
-            },
-
-            // mailbox junk messages
-            junk: {
-                type: "number",
-                required: false,
-                readonly: true,
-                get: ({ ctx, params }) => {
-                    return ctx.call("v2.emails.messages.count", { query: { mailbox: ctx.params.id, junk: true } });
-                },
-            },
 
 
             ...DbService.FIELDS,// inject dbservice fields
@@ -237,7 +138,96 @@ module.exports = {
      * service actions
      */
     actions: {
+        /**
+         * get mailbox stats
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * 
+         * @returns {Object} mailbox stats  
+         */
+        stats: {
+            rest: {
+                method: "GET",
+                path: "/:id/stats",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.get(ctx.params.id);
 
+                // get unread count
+                const unread = await ctx.call("v2.emails.messages.count", {
+                    query: {
+                        mailbox: mailbox.id,
+                        seen: false,
+                    }
+                });
+
+                // get total count
+                const total = await ctx.call("v2.emails.messages.count", {
+                    query: {
+                        mailbox: mailbox.id,
+                    }
+                });
+
+                // get unseen count
+                const unseen = await ctx.call("v2.emails.messages.count", {
+                    query: {
+                        mailbox: mailbox.id,
+                        seen: false,
+                        recent: true,
+                    }
+                });
+
+                // get recent count
+                const recent = await ctx.call("v2.emails.messages.count", {
+                    query: {
+                        mailbox: mailbox.id,
+                        recent: true,
+                    }
+                });
+
+                // get flagged count
+                const flagged = await ctx.call("v2.emails.messages.count", {
+                    query: {
+                        mailbox: mailbox.id,
+                        flagged: true,
+                    }
+                });
+
+                // get answered count
+                const answered = await ctx.call("v2.emails.messages.count", {
+                    query: {
+                        mailbox: mailbox.id,
+                        answered: true,
+                    }
+                });
+
+                // get draft count
+                const draft = await ctx.call("v2.emails.messages.count", {
+                    query: {
+                        mailbox: mailbox.id,
+                        draft: true,
+                    }
+                });
+
+                return {
+                    unread,
+                    total,
+                    unseen,
+                    recent,
+                    flagged,
+                    answered,
+                    draft,
+                }
+            }
+        },
     },
 
     /**

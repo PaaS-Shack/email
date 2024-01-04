@@ -1,6 +1,7 @@
 const DbService = require("db-mixin");
 const Membership = require("membership-mixin");
 const ConfigLoader = require("config-mixin");
+const { Context } = require("moleculer");
 
 const { MoleculerClientError, MoleculerServerError } = require("moleculer").Errors;
 
@@ -235,7 +236,27 @@ module.exports = {
      * service actions
      */
     actions: {
-
+        /**
+         * get message body by id
+         * 
+         * @actions
+         * @param {String} id - message id
+         * 
+         * @returns {Object} message body
+         */
+        body: {
+            params: {
+                id: { type: "string" },
+            },
+            async handler(ctx) {
+                let { id } = ctx.params;
+                let message = await this.getById(id);
+                if (!message) {
+                    throw new MoleculerClientError("Message not found", 404);
+                }
+                return message.text
+            }
+        },
     },
 
     /**
@@ -249,7 +270,19 @@ module.exports = {
      * service methods
      */
     methods: {
-
+        /**
+         * get message by id
+         * 
+         * @param {Context} ctx - context of service
+         * @param {String} id - message id
+         * 
+         * @returns {Object} message
+         */
+        async getById(id) {
+            return this.resolveEntities(null, {
+                id
+            })
+        },
     }
 
 }

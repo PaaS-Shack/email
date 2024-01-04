@@ -288,22 +288,6 @@ module.exports = {
                     query: {
                         mailbox: mailbox.id,
                     },
-                    fields: [
-                        "id",
-                        "from",
-                        "to",
-                        "subject",
-                        "unread",
-                        "seen",
-                        "flagged",
-                        "answered",
-                        "draft",
-                        "recent",
-                        "deleted",
-                        "sent",
-                        "createdAt",
-                        "updatedAt",
-                    ],
                     page: ctx.params.page,
                     pageSize: ctx.params.pageSize,
                     sort: ctx.params.sort,
@@ -348,23 +332,14 @@ module.exports = {
                 // get message
                 return ctx.call("v2.emails.messages.get", {
                     id: ctx.params.message,
-                    fields: [
-                        "id",
-                        "from",
-                        "to",
-                        "subject",
-                        "text",
-                        "unread",
-                        "seen",
-                        "flagged",
-                        "answered",
-                        "draft",
-                        "recent",
-                        "deleted",
-                        "sent",
-                        "createdAt",
-                        "updatedAt",
-                    ],
+                }).then(async (message) => {
+                    const body = await ctx.call("v2.emails.messages.body", {
+                        id: message.id,
+                    });
+                    return {
+                        ...message,
+                        body,
+                    }
                 });
             }
         },

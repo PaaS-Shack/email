@@ -250,10 +250,16 @@ module.exports = {
             },
             async handler(ctx) {
                 let { id } = ctx.params;
+
+                // get message
                 let message = await this.getById(id);
+
+                // check if message exists
                 if (!message) {
                     throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id });
                 }
+
+                // get message body
                 return ctx.call("v2.emails.find", {
                     query: {
                         envelope: message.envelope,

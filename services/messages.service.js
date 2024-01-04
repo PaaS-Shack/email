@@ -93,7 +93,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -104,7 +104,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -115,7 +115,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -126,7 +126,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -137,7 +137,7 @@ module.exports = {
                 default: [],
                 items: "string",
                 populate: {
-                    action: "v2.emails.attachments.get",
+                    action: "v2.emails.attachments.resolve",
                 }
             },
 

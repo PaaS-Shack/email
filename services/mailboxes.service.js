@@ -294,6 +294,47 @@ module.exports = {
                 });
             }
         },
+
+        /**
+         * get mailbox message
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        message: {
+            rest: {
+                method: "GET",
+                path: "/:id/messages/:message",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get message
+                return ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                });
+            }
+        },
     },
 
     /**
@@ -435,9 +476,9 @@ module.exports = {
          * 
          * @returns {Promise} mailbox object
          */
-         async getMailbox(ctx, id) {
+        async getMailbox(ctx, id) {
             // get mailbox
-            return this.resolveEntities(null,{
+            return this.resolveEntities(null, {
                 id
             });
         },

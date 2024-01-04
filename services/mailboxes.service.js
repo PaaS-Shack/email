@@ -78,7 +78,7 @@ module.exports = {
                 required: true,
                 emutible: true,
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 
@@ -109,7 +109,7 @@ module.exports = {
                 type: "string",
                 required: true,
                 populate: {
-                    action: "v2.emails.accounts.get",
+                    action: "v2.emails.accounts.resolve",
                 }
             },
 

@@ -252,9 +252,17 @@ module.exports = {
                 let { id } = ctx.params;
                 let message = await this.getById(id);
                 if (!message) {
-                    throw new MoleculerClientError("Message not found", 404);
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id });
                 }
-                return message.text
+                return ctx.call("v2.emails.find", {
+                    query: {
+                        envelope: message.envelope,
+                    },
+                    limit: 1,
+                    fields: ["body"],
+                }).then((res) => {
+                    return res[0].text;
+                });
             }
         },
     },

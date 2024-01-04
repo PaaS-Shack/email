@@ -261,7 +261,7 @@ module.exports = {
                     convert: true,
                     default: 1,
                 },
-                limit: {
+                pageSize: {
                     type: "number",
                     optional: true,
                     convert: true,
@@ -284,7 +284,7 @@ module.exports = {
                 }
 
                 // get messages
-                return ctx.call("v2.emails.messages.find", {
+                return ctx.call("v2.emails.messages.list", {
                     query: {
                         mailbox: mailbox.id,
                     },
@@ -305,7 +305,7 @@ module.exports = {
                         "updatedAt",
                     ],
                     page: ctx.params.page,
-                    limit: ctx.params.limit,
+                    pageSize: ctx.params.pageSize,
                     sort: ctx.params.sort,
                 });
             }

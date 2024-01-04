@@ -415,27 +415,6 @@ module.exports = {
      * service events
      */
     events: {
-        /**
-         * on envelope created, lookup email addressess
-         */
-        async "emails.envelopes.created"(ctx) {
-            // get envelope
-            const envelope = ctx.params.data;
-
-            // get to addresses
-            const addresses = await this.resolveEntities(null, {
-                id: envelope.to,
-            });
-
-            // check addresses for mailboxes
-            const mailboxes = addresses.filter((address) => {
-                return address.mailboxes.length > 0;
-            });
-
-            // check mailboxes
-            this.logger.info("Mailboxes", mailboxes);
-
-        },
 
     },
 
@@ -561,6 +540,9 @@ module.exports = {
                 local = splits[0];
             }
 
+            // replace / with empty string
+            local = local.replace(/\//g, '');
+            
 
             // return address
             return `${local}@${parts[1]}`;

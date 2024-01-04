@@ -288,6 +288,22 @@ module.exports = {
                     query: {
                         mailbox: mailbox.id,
                     },
+                    fields: [
+                        "id",
+                        "from",
+                        "to",
+                        "subject",
+                        "unread",
+                        "seen",
+                        "flagged",
+                        "answered",
+                        "draft",
+                        "recent",
+                        "deleted",
+                        "sent",
+                        "createdAt",
+                        "updatedAt",
+                    ],
                     page: ctx.params.page,
                     limit: ctx.params.limit,
                     sort: ctx.params.sort,
@@ -332,6 +348,527 @@ module.exports = {
                 // get message
                 return ctx.call("v2.emails.messages.get", {
                     id: ctx.params.message,
+                    fields: [
+                        "id",
+                        "from",
+                        "to",
+                        "subject",
+                        "text",
+                        "unread",
+                        "seen",
+                        "flagged",
+                        "answered",
+                        "draft",
+                        "recent",
+                        "deleted",
+                        "sent",
+                        "createdAt",
+                        "updatedAt",
+                    ],
+                });
+            }
+        },
+
+        /**
+         * mark message as read
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        read: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/read",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    seen: true,
+                    recent: false,
+                });
+            }
+        },
+
+        /**
+         * mark message as unread
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        unread: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/unread",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    seen: false,
+                    recent: true,
+                });
+            }
+        },
+
+        /**
+         * mark message as flagged
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        flag: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/flag",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    flagged: true,
+                });
+            }
+        },
+
+        /**
+         * mark message as unflagged
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        unflag: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/unflag",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    flagged: false,
+                });
+            }
+        },
+
+        /**
+         * mark message as answered
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        answer: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/answer",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    answered: true,
+                });
+            }
+        },
+
+        /**
+         * mark message as unanswered
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        unanswer: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/unanswer",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    answered: false,
+                });
+            }
+        },
+
+        /**
+         * mark message as draft
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        draft: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/draft",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox || mailbox.account !== ctx.meta.account.id) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id, account: ctx.meta.account.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message || message.mailbox !== mailbox.id) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message, mailbox: mailbox.id });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    draft: true,
+                });
+            }
+        },
+
+        /**
+         * mark message as undraft
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        undraft: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/undraft",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+                // check mailbox
+                if (!mailbox || mailbox.account !== ctx.meta.account.id) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id, account: ctx.meta.account.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message || message.mailbox !== mailbox.id) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message, mailbox: mailbox.id });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    draft: false,
+                });
+            }
+        },
+
+        /**
+         * mark message as junk
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} message - message id
+         * 
+         * @returns {Object} mailbox message
+         */
+        junk: {
+            rest: {
+                method: "PUT",
+                path: "/:id/messages/:message/junk",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                message: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+                // check mailbox
+                if (!mailbox || mailbox.account !== ctx.meta.account.id) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id, account: ctx.meta.account.id });
+                }
+
+                // get message
+                const message = await ctx.call("v2.emails.messages.get", {
+                    id: ctx.params.message,
+                    fields: [
+                        "id",
+                    ],
+                });
+
+                // check message
+                if (!message || message.mailbox !== mailbox.id) {
+                    // throw error
+                    throw new MoleculerClientError("Message not found", 404, "MESSAGE_NOT_FOUND", { id: ctx.params.message, mailbox: mailbox.id });
+                }
+
+                // update message
+                return ctx.call("v2.emails.messages.update", {
+                    id: message.id,
+                    junk: true,
                 });
             }
         },

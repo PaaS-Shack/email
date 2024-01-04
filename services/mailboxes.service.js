@@ -159,7 +159,13 @@ module.exports = {
             },
             async handler(ctx) {
                 // get mailbox
-                const mailbox = await this.get(ctx.params.id);
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
 
                 // get unread count
                 const unread = await ctx.call("v2.emails.messages.count", {
@@ -359,7 +365,22 @@ module.exports = {
                 });
                 stream.pipe(headerStream);
             })
-        }
+        },
+
+        /**
+         * get mailbox by id
+         * 
+         * @param {Context} ctx
+         * @param {String} id - mailbox id
+         * 
+         * @returns {Promise} mailbox object
+         */
+         async getMailbox(ctx, id) {
+            // get mailbox
+            return this.resolveEntities(null,{
+                id
+            });
+        },
     }
 
 }

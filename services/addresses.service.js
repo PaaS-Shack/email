@@ -62,7 +62,7 @@ module.exports = {
             domain: {
                 type: "string",
                 required: false,
-                onCreate:function({ctx}) {
+                onCreate: function ({ ctx }) {
                     const parsed = pls.parse(ctx.params.address.split('@')[1]);
                     return parsed.domain;
                 }
@@ -547,6 +547,10 @@ module.exports = {
          * @returns {Promise}
          */
         async lookupByEmailAddress(ctx, address) {
+
+            // normalize address
+            address = this.normalize(ctx, address);
+
             // split address for wildcard
             const hostname = address.split('@')[1];
             const wildcard = `*@${hostname}`;
@@ -576,7 +580,7 @@ module.exports = {
         async lookup(ctx, address, name) {
 
             // normalize address
-            address = address.toLowerCase().trim();
+            address = this.normalize(ctx, address);
 
             // find email address
             const result = await this.findEntity(null, {
@@ -604,6 +608,44 @@ module.exports = {
 
             // return result
             return result;
+        },
+
+        /**
+         * normalize email address
+         * m.784659962.3f5ada29ba85a3ae55-newsletter=email3.gog.com@emsgrid.com => email3.gog.com@emsgrid.com
+         * msprvs1=19732vvyzcykd=bounces-294276@bounces.indeed.com => bounces-294276@bounces.indeed.com
+         * mangoraft+caf_=no-reply=mangoraft.ca@gmail.com => mangoraft@gmail.com
+         * 
+         * @param {Context} ctx - context
+         * @param {String} address - email address
+         * 
+         * @returns {String} normalized email address
+         */
+        normalize(ctx, address) {
+            // normalize address
+            address = address.toLowerCase().trim();
+
+            // split address
+            const parts = address.split('@');
+            let local = parts[0];
+
+            // check local
+            if (local.indexOf('=') > -1) {
+                // split local
+                const splits = local.split('=');
+                local = splits[0];
+            }
+
+            // check local
+            if (local.indexOf('+') > -1) {
+                // split local
+                const splits = local.split('+');
+                local = splits[0];
+            }
+
+
+            // return address
+            return `${local}@${parts[1]}`;
         }
     },
 

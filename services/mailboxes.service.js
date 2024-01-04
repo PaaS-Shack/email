@@ -288,6 +288,10 @@ module.exports = {
                     query: {
                         mailbox: mailbox.id,
                     },
+                    populate: [
+                        "from",
+                        "to",
+                    ],
                     page: ctx.params.page,
                     pageSize: ctx.params.pageSize,
                     sort: ctx.params.sort,
@@ -332,6 +336,10 @@ module.exports = {
                 // get message
                 return ctx.call("v2.emails.messages.get", {
                     id: ctx.params.message,
+                    populate: [
+                        "from",
+                        "to",
+                    ],
                 }).then(async (message) => {
                     const body = await ctx.call("v2.emails.messages.body", {
                         id: message.id,

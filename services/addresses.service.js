@@ -519,33 +519,17 @@ module.exports = {
          * @returns {String} normalized email address
          */
         normalize(ctx, address) {
-            // normalize address
+            // Convert the entire address to lowercase and trim
             address = address.toLowerCase().trim();
 
-            // split address
-            const parts = address.split('@');
-            let local = parts[0];
+            // Split the address into local and domain parts
+            const [local, domain] = address.split('@');
 
-            // check local
-            if (local.indexOf('=') > -1) {
-                // split local
-                const splits = local.split('=');
-                local = splits[0];
-            }
+            // Use a regular expression to handle various patterns in the local part
+            const normalizedLocal = local.replace(/[=+\/]/g, '');
 
-            // check local
-            if (local.indexOf('+') > -1) {
-                // split local
-                const splits = local.split('+');
-                local = splits[0];
-            }
-
-            // replace / with empty string
-            local = local.replace(/\//g, '');
-            
-
-            // return address
-            return `${local}@${parts[1]}`;
+            // Return the normalized email address
+            return `${normalizedLocal}@${domain}`;
         }
     },
 

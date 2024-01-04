@@ -259,7 +259,7 @@ module.exports = {
                         envelope: message.envelope,
                     },
                     limit: 1,
-                    fields: ["body"],
+                    fields: ["text"],
                 }).then((res) => {
                     return res[0].text;
                 });

@@ -233,6 +233,67 @@ module.exports = {
                 }
             }
         },
+
+        /**
+         * get mailbox messages
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {Number} page - page number
+         * @param {Number} limit - page limit
+         * @param {String} sort - sort order
+         * 
+         * @returns {Array} mailbox messages  
+         */
+        messages: {
+            rest: {
+                method: "GET",
+                path: "/:id/messages",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                page: {
+                    type: "number",
+                    optional: true,
+                    convert: true,
+                    default: 1,
+                },
+                limit: {
+                    type: "number",
+                    optional: true,
+                    convert: true,
+                    default: 10,
+                },
+                sort: {
+                    type: "string",
+                    optional: true,
+                    default: "createdAt",
+                },
+            },
+            async handler(ctx) {
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // get messages
+                return ctx.call("v2.emails.messages.find", {
+                    query: {
+                        mailbox: mailbox.id,
+                    },
+                    page: ctx.params.page,
+                    limit: ctx.params.limit,
+                    sort: ctx.params.sort,
+                });
+            }
+        },
     },
 
     /**

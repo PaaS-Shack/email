@@ -51,7 +51,7 @@ module.exports = {
                 type: "string",
                 required: true,
                 populate: {
-                    action: "v2.emails.mailboxes.get",
+                    action: "v2.emails.mailboxes.resolve",
                 }
             },
 
@@ -60,7 +60,7 @@ module.exports = {
                 type: "string",
                 required: true,
                 populate: {
-                    action: "v2.emails.envelopes.get",
+                    action: "v2.emails.envelopes.resolve",
                 }
             },
 
@@ -83,7 +83,7 @@ module.exports = {
                 type: "string",
                 required: true,
                 populate: {
-                    action: "v2.emails.addresses.get",
+                    action: "v2.emails.addresses.resolve",
                 }
             },
 

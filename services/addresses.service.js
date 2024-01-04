@@ -4,6 +4,7 @@ const ConfigLoader = require("config-mixin");
 
 const { MoleculerClientError, MoleculerServerError } = require("moleculer").Errors;
 
+const pls = require("../lib/pls.min.js")
 
 /**
  * This service keeps track of email addresses.  It is used to prevent spamming and
@@ -55,6 +56,16 @@ module.exports = {
             address: {
                 type: "string",
                 required: true,
+            },
+
+            // email address domain
+            domain: {
+                type: "string",
+                required: false,
+                onCreate:function({ctx}) {
+                    const parsed = pls.parse(ctx.params.address.split('@')[1]);
+                    return parsed.domain;
+                }
             },
 
             // email address description

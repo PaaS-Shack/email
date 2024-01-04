@@ -64,11 +64,19 @@ module.exports = {
                 required: false,
             },
 
+            // mailbox flags
+            flags: {
+                type: "array",
+                required: false,
+                default: [],
+                items: "string"
+            },
+
             // mailbox email address
             email: {
                 type: "string",
                 required: true,
-                readonly: true,
+                emutible: true,
                 populate: {
                     action: "v2.emails.addresses.get",
                 }
@@ -83,15 +91,6 @@ module.exports = {
                 populate: {
                     action: "v2.emails.addresses.resolve",
                 }
-            },
-
-
-            // mailbox flags
-            flags: {
-                type: "array",
-                required: false,
-                default: [],
-                items: "string"
             },
 
             // mailbox messages

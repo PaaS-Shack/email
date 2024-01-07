@@ -465,6 +465,7 @@ module.exports = {
             // loop through addresses
             for (const address of addresses) {
                 // lookup address
+                this.logger.info(`Processing email address ${address.name} ${address.address}`);
                 const addressEntity = await ctx.call("v2.emails.addresses.lookup", {
                     name: address.name,
                     address: address.address,

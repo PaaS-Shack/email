@@ -412,6 +412,10 @@ module.exports = {
          * @returns {Object} session - session object
          */
         block: {
+            rest: {
+                method: "POST",
+                path: "/:id/block",
+            },
             params: {
                 id: {
                     type: "string",
@@ -448,6 +452,10 @@ module.exports = {
          * @returns {Object} session - session object
          */
         unblock: {
+            rest: {
+                method: "POST",
+                path: "/:id/unblock",
+            },
             params: {
                 id: {
                     type: "string",

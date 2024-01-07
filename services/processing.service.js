@@ -156,7 +156,7 @@ module.exports = {
             const clientHostname = session.clientHostname;
 
             const valid = {
-                session:{
+                session: {
                     id: session.id,
                     remoteAddress: session.remoteAddress,
                     clientHostname: session.clientHostname,
@@ -412,19 +412,8 @@ module.exports = {
          */
         async processAddreses(ctx, email, envelope) {
 
-            // get from address
-            const from = email.headers.get('from');
-            if (from) {
-                const addresses = await this.processAddressArray(ctx, from.value);
-                email.from = addresses[0];
-            }
-
-            // get to address
-            const to = email.headers.get('to');
-            if (to) {
-                const addresses = await this.processAddressArray(ctx, to.value);
-                email.to = addresses;
-            }
+            email.from = envelope.from;
+            email.to = envelope.to;
 
             // get cc address
             const cc = email.headers.get('cc');

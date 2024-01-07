@@ -447,7 +447,7 @@ module.exports = {
                 email.replyTo = addresses;
             }
 
-            this.logger.info(`Processing email addresses ${envelope.id} ${email.messageId}`)
+            this.logger.info(`Processing email addresses ${envelope.id} ${email.from} ${email.to.length} ${email.cc.length} ${email.bcc.length} ${email.replyTo.length}`)
 
         },
 

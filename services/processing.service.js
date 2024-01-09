@@ -163,7 +163,13 @@ module.exports = {
                 this.logger.info(`Email processed ${envelope.id} ${email.id}`);
             }).catch(err => {
                 this.logger.error(`Error processing email ${envelope.id}`, err);
-
+            }).then(() => {
+                // verify DKIM signature
+                this.verifyDKIM(ctx, envelope).then(results => {
+                    this.logger.info(`DKIM verified ${envelope.id} ${results.result}`);
+                }).catch(err => {
+                    this.logger.error(`Error verifying DKIM ${envelope.id}`, err);
+                });
             });
         }
     },
@@ -184,7 +190,11 @@ module.exports = {
 
             const results = await this.verifyDKIMStream(ctx, envelope);
 
-            
+            // update envelope
+            await ctx.call("v2.emails.envelopes.update", {
+                id: envelope.id,
+                dkim: results.result
+            });
 
             return results;
 

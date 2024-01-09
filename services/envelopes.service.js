@@ -108,6 +108,13 @@ module.exports = {
                 default: false,
             },
 
+            // email envelope dkim verified status
+            dkim: {
+                type: "string",
+                required: false,
+                default: null,
+            },
+
             ...DbService.FIELDS,// inject dbservice fields
         },
         defaultPopulates: [],

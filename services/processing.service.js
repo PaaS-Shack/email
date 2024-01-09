@@ -184,6 +184,8 @@ module.exports = {
 
             const results = await this.verifyDKIMStream(ctx, envelope);
 
+            
+
             return results;
 
         },
@@ -198,7 +200,14 @@ module.exports = {
          */
         async verifyDKIMStream(ctx, envelope) {
             return new Promise(async (resolve, reject) => {
-                const verifier = new dkim.DKIMVerifyStream(cfg, (err, result, results) => {
+                const verifier = new dkim.DKIMVerifyStream({
+                    // 0 = no logging, 1 = errors only, 2 = errors and warnings, 3 = errors, warnings, and info
+                    sigerror_log_level: 0,
+                    // dns timeout in seconds
+                    timeout: 30,
+                    // skew time allowed
+                    allowed_time_skew: true
+                }, (err, result, results) => {
                     console.log(err, result, results);
                     if (err) {
                         reject(err);

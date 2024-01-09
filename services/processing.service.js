@@ -9,6 +9,7 @@ const path = require('path');
 const { MoleculerClientError, MoleculerServerError } = require("moleculer").Errors;
 
 const HeaderSplitter = require("../lib/header-splitter");
+const dkim = require('../lib/dkim');
 const { Context } = require("moleculer");
 
 const MailParser = require('mailparser').MailParser;
@@ -77,7 +78,7 @@ module.exports = {
             params: {
                 id: {
                     type: "string",
-                    required: true,
+                    optional: false
                 }
             },
             async handler(ctx) {
@@ -104,7 +105,7 @@ module.exports = {
             params: {
                 id: {
                     type: "string",
-                    required: true,
+                    optional: false
                 }
             },
             async handler(ctx) {
@@ -118,7 +119,35 @@ module.exports = {
 
                 return email;
             }
-        }
+        },
+
+        /**
+         * verify DKIM signature
+         * 
+         * @actions
+         * @param {String} id - envelope id
+         * 
+         * @returns {Object} - returns email object
+         */
+        verifyDKIM: {
+            params: {
+                id: {
+                    type: "string",
+                    optional: false
+                }
+            },
+            async handler(ctx) {
+                const id = ctx.params.id;
+
+                // get envelope
+                const envelope = await ctx.call("v2.emails.envelopes.get", { id });
+
+                // verify DKIM signature
+                const results = await this.verifyDKIM(ctx, envelope);
+
+                return results;
+            }
+        },
     },
 
     /**
@@ -143,6 +172,50 @@ module.exports = {
      * service methods
      */
     methods: {
+        /**
+         * verify DKIM signature
+         * 
+         * @param {Object} ctx - moleculer context
+         * @param {Object} envelope - envelope object
+         * 
+         * @returns {Promise} - resolves to s3 object
+         */
+        async verifyDKIM(ctx, envelope) {
+
+            const results = await this.verifyDKIMStream(ctx, envelope);
+
+            return results;
+
+        },
+
+        /**
+         * verify DKIM signature stream
+         * 
+         * @param {Object} ctx - moleculer context
+         * @param {Object} envelope - envelope object
+         * 
+         * @returns {Promise} - resolves 
+         */
+        async verifyDKIMStream(ctx, envelope) {
+            return new Promise(async (resolve, reject) => {
+                const verifier = new dkim.DKIMVerifyStream(cfg, (err, result, results) => {
+                    console.log(err, result, results);
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve({
+                            result, results
+                        });
+                    }
+                });
+
+                // get message stream
+                const stream = await this.getMessageStream(envelope);
+
+                // pipe stream to parser
+                stream.pipe(verifier);
+            });
+        },
         /**
          * check session remoteAddress and clientHostname match though dns lookups
          * 

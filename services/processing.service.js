@@ -212,19 +212,20 @@ module.exports = {
             return new Promise(async (resolve, reject) => {
                 const verifier = new dkim.DKIMVerifyStream({
                     // 0 = no logging, 1 = errors only, 2 = errors and warnings, 3 = errors, warnings, and info
-                    sigerror_log_level: 0,
+                    sigerror_log_level: 3,
                     // dns timeout in seconds
                     timeout: 30,
                     // skew time allowed
                     allowed_time_skew: true
                 }, (err, result, results) => {
-                    console.log(err, result, results);
                     if (err) {
                         reject(err);
                     } else {
+                        this.logger.info(`DKIM verified ${envelope.id} ${result}`);
                         resolve({
                             result, results
                         });
+
                     }
                 });
 

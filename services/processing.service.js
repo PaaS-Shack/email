@@ -221,7 +221,6 @@ module.exports = {
                     if (err) {
                         reject(err);
                     } else {
-                        this.logger.info(`DKIM verified ${envelope.id} ${result}`);
                         resolve({
                             result, results
                         });

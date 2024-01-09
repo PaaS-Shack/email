@@ -270,7 +270,7 @@ module.exports = {
                 sort: {
                     type: "string",
                     optional: true,
-                    default: "createdAt",
+                    default: "-createdAt",
                 },
             },
             async handler(ctx) {

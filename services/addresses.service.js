@@ -407,17 +407,6 @@ module.exports = {
                     type: "string",
                     optional: false
                 },
-                limit: {
-                    type: "number",
-                    optional: true,
-                    convert: true,
-                    default: 10,
-                },
-                sort: {
-                    type: "string",
-                    optional: true,
-                    default: "createdAt",
-                },
             },
             async handler(ctx) {
                 // get query
@@ -427,8 +416,6 @@ module.exports = {
                 const entities = await this.findEntities(null, {
                     search: query.address,
                     searchText: ['address'],
-                    limit: query.limit,
-                    sort: query.sort,
                 });
 
                 // return entities

@@ -124,6 +124,15 @@ module.exports = {
 
             ...DbService.FIELDS,// inject dbservice fields
         },
+
+        // indexes
+        indexes:{
+            fields: { 
+                address: "text",
+                name: "text",
+            }
+        },
+
         defaultPopulates: [],
 
         scopes: {

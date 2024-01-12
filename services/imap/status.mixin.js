@@ -79,7 +79,6 @@ module.exports = {
                 return this.sendTaggedNo(ctx, session, command, "STATUS failed");
             }
 
-
             // send untagged STATUS response
             await this.sendUntaggedMailboxStatus(ctx, session, mailbox, attributes);
 

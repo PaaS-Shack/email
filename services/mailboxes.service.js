@@ -235,6 +235,128 @@ module.exports = {
         },
 
         /**
+         * add alias to mailbox
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} alias - alias email address id
+         * 
+         * @returns {Object} mailbox
+         */
+        addAlias: {
+            rest: {
+                method: "PUT",
+                path: "/:id/alias/:alias",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                alias: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get alias
+                const address = await ctx.call("v2.emails.addresses.resolve", {
+                    id: ctx.params.alias,
+                });
+
+                // check alias
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Alias not found", 404, "ALIAS_NOT_FOUND", { id: ctx.params.alias });
+                }
+
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id, account: ctx.meta.account.id });
+                }
+
+                // check mailbox does not already have alias
+                if (mailbox.alias.includes(address.id)) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox already has alias", 400, "MAILBOX_ALREADY_HAS_ALIAS", { id: ctx.params.id, alias: address.id });
+                }
+
+                // update mailbox
+                return this.updateEntity(ctx, {
+                    id: mailbox.id,
+                    $addToSet: {
+                        alias: address.id,
+                    }
+                }, { raw: true });
+            }
+        },
+
+        /**
+         * remove alias from mailbox
+         * 
+         * @actions
+         * @param {String} id - mailbox id
+         * @param {String} alias - alias email address id
+         * 
+         * @returns {Object} mailbox
+         */
+        removeAlias: {
+            rest: {
+                method: "DELETE",
+                path: "/:id/alias/:alias",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: true,
+                },
+                alias: {
+                    type: "string",
+                    optional: true,
+                },
+            },
+            async handler(ctx) {
+                // get alias
+                const address = await ctx.call("v2.emails.addresses.resolve", {
+                    id: ctx.params.alias,
+                });
+
+                // check alias
+                if (!address) {
+                    // throw error
+                    throw new MoleculerClientError("Alias not found", 404, "ALIAS_NOT_FOUND", { id: ctx.params.alias });
+                }
+
+                // get mailbox
+                const mailbox = await this.getMailbox(ctx, ctx.params.id);
+
+                // check mailbox
+                if (!mailbox) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox not found", 404, "MAILBOX_NOT_FOUND", { id: ctx.params.id, account: ctx.meta.account.id });
+                }
+
+                // check mailbox has alias
+                if (!mailbox.alias.includes(address.id)) {
+                    // throw error
+                    throw new MoleculerClientError("Mailbox does not have alias", 400, "MAILBOX_DOES_NOT_HAVE_ALIAS", { id: ctx.params.id, alias: address.id });
+                }
+
+                // update mailbox
+                return this.updateEntity(ctx, {
+                    id: mailbox.id,
+                    $pull: {
+                        alias: address.id,
+                    }
+                }, { raw: true });
+            }
+        },
+
+        /**
          * get mailbox messages
          * 
          * @actions

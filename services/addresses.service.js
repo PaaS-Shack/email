@@ -390,6 +390,53 @@ module.exports = {
         },
 
         /**
+         * search email addresses
+         * 
+         * @actions
+         * @param {String} address - email address
+         * 
+         * @returns {Array} email addresses
+         */
+        search: {
+            rest: {
+                method: "GET",
+                path: "/search",
+            },
+            params: {
+                address: {
+                    type: "string",
+                    optional: false
+                },
+                limit: {
+                    type: "number",
+                    optional: true,
+                    convert: true,
+                    default: 10,
+                },
+                sort: {
+                    type: "string",
+                    optional: true,
+                    default: "createdAt",
+                },
+            },
+            async handler(ctx) {
+                // get query
+                const query = ctx.params;
+
+                // get entities
+                const entities = await this.findEntities(null, {
+                    search: query.address,
+                    searchText: ['address'],
+                    limit: query.limit,
+                    sort: query.sort,
+                });
+
+                // return entities
+                return entities;
+            }
+        },
+
+        /**
          * clean sessions remove all
          * 
          * @actions

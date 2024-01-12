@@ -126,12 +126,7 @@ module.exports = {
         },
 
         // indexes
-        indexes:{
-            fields: { 
-                address: "text",
-                name: "text",
-            }
-        },
+        indexes: [{ fields: { address: "text", name: "text" } }],
 
         defaultPopulates: [],
 
@@ -542,6 +537,19 @@ module.exports = {
         }
     },
 
-}
+    /**
+     * service created lifecycle event handler
+     */
+    created() { },
 
+    /**
+     * service started lifecycle event handler
+     */
+    async started() {
+        const adapter = await this.getAdapter();
+
+        await this.createIndexes(adapter);
+    }
+
+};
 

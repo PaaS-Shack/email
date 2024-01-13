@@ -178,13 +178,13 @@ module.exports = {
 
                 const query = {
                     id: envelope.id,
-                    $push: {
-                        from: attachment.id,
+                    $addToSet: {
+                        attachments: attachment.id,
                     }
                 };
 
                 // update session
-                const update = await this.updateEntity(ctx, query);
+                const update = await this.updateEntity(ctx, query, { raw: true });
 
                 // return session
                 return update;
@@ -282,7 +282,7 @@ module.exports = {
                 const update = await this.updateEntity(ctx, query, { raw: true });
 
                 // emit processed event
-                await ctx.emit('emails.envelopes.processed', update);   
+                await ctx.emit('emails.envelopes.processed', update);
 
                 // return session
                 return update;

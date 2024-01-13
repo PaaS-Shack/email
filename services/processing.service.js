@@ -33,8 +33,8 @@ module.exports = {
      * Service Mixins
      * 
      * @type {Array}
-     * @property {DbService} DbService - Database mixin
      * @property {ConfigLoader} ConfigLoader - Config loader mixin
+     * @property {S3Mixin} S3Mixin - S3 store mixin
      */
     mixins: [
         ConfigLoader([
@@ -169,6 +169,27 @@ module.exports = {
                     this.logger.info(`DKIM verified ${envelope.id} ${results.result}`);
                 }).catch(err => {
                     this.logger.error(`Error verifying DKIM ${envelope.id}`, err);
+                });
+            });
+        },
+        async "emails.sessions.created"(ctx) {
+            const session = ctx.params.data;
+            this.logger.info(`Session created ${session.id}`);
+
+            // check session
+            this.checkSession(ctx, session).then((result) => {
+                this.logger.info(`Session checked ${session.id} ${result.remoteAddress} ${result.clientHostname}`);
+                // mark session as  checked
+                return ctx.call("v2.emails.sessions.verify", {
+                    id: session.id,
+                    verified: result.clientHostname,
+                });
+            }).catch(err => {
+                this.logger.error(`Error checking session ${session.id}`, err);
+
+                return ctx.call("v2.emails.sessions.verify", {
+                    id: session.id,
+                    verified: false,
                 });
             });
         }
@@ -334,7 +355,7 @@ module.exports = {
                     // store attachment in s3
                     await this.processAttachment(ctx, data, envelope)
                         .catch(err => {
-                            this.logger.error(`Error processing attachment ${data.filename} ${err.message}`,err);
+                            this.logger.error(`Error processing attachment ${data.filename} ${err.message}`, err);
                         })
                 } else if (data.type === 'text') {
                     email.body = data.body;

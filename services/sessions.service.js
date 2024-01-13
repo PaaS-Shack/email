@@ -135,6 +135,13 @@ module.exports = {
                 default: false,
             },
 
+            // session has been verified
+            verified: {
+                type: "boolean",
+                required: false,
+                default: false,
+            },
+
 
             ...DbService.FIELDS,// inject dbservice fields
         },
@@ -477,6 +484,51 @@ module.exports = {
                     id: session.id,
                     $set: {
                         blocked: false,
+                    }
+                };
+                return this.updateEntity(ctx, query, { raw: true });
+            }
+        },
+
+        /**
+         * verify session
+         * 
+         * @actions
+         * @param {String} id - session id
+         * @param {Boolean} verified - verified
+         * 
+         * @returns {Object} session - session object
+         */
+        verify: {
+            rest: {
+                method: "POST",
+                path: "/:id/verify",
+            },
+            params: {
+                id: {
+                    type: "string",
+                    optional: false,
+                },
+                verified: {
+                    type: "boolean",
+                    optional: false,
+                },
+            },
+            async handler(ctx) {
+                // get session
+                const session = await this.getSessions(ctx, ctx.params.id);
+
+                // check session
+                if (!session) {
+                    // throw error
+                    throw new MoleculerClientError("Session not found", 404, "SESSION_NOT_FOUND", { id: ctx.params.id });
+                }
+
+                // update session
+                const query = {
+                    id: session.id,
+                    $set: {
+                        verified: ctx.params.verified,
                     }
                 };
                 return this.updateEntity(ctx, query, { raw: true });

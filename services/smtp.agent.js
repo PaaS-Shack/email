@@ -425,44 +425,42 @@ module.exports = {
             }
 
             // lookup address
-            const addressObject = await this.broker.call("v2.emails.addresses.lookup", {
+            const addressObjects = await this.broker.call("v2.emails.addresses.lookupByEmailAddress", {
                 address,
                 name
-            })
-                .catch(async (err) => {
-                    this.logger.info(`${session.sessionID} address ${address} not found, ${err.message}`);
-                });
+            });
 
             // check if address is found
-            if (!addressObject) {
+            if (addressObjects.length == 0) {
                 // return address error
                 return callback(new Error('address not found'));
             }
 
-            // add address to session
-            await this.broker.call("v2.emails.sessions.addTo", {
-                id: session.sessionID,
-                address: addressObject.id,
-            })
-                .catch(async (err) => {
-                    this.logger.info(`${session.sessionID} address ${address} not found, ${err.message}`);
+            // loop over address objects
+            for (let index = 0; index < addressObjects.length; index++) {
+                const addressObject = addressObjects[index];
+
+
+                // add address to session
+                await this.broker.call("v2.emails.sessions.addTo", {
+                    id: session.sessionID,
+                    address: addressObject.id,
                 });
 
-            this.logger.info(`${session.sessionID} to: ${addressObject.name} <${addressObject.address}> (${addressObject.id})`);
+                this.logger.info(`${session.sessionID} to: ${addressObject.name} <${addressObject.address}> (${addressObject.id}) ${addressObject.blocked ? 'blocked' : ''}`);
 
-            // add address to session
-            session.to.push(addressObject.id);
+                // add address to session 
+                session.to.push(addressObject.id);
 
-            // check blacklist is enabled
-            if (this.config["emails.smtp.blacklist"]) {
-                //
+
+                // check if address is blocked
+                if (addressObject.blocked) {
+                    // callback with error
+                    this.logger.info(`${session.sessionID} address ${address} blocked`);
+                    return callback(new Error('address blocked'));
+                }
             }
-            // check if address is blocked
-            if (addressObject.blocked) {
-                // callback with error
-                this.logger.info(`${session.sessionID} address ${address} blocked`);
-                return callback(new Error('address blocked'));
-            }
+            
 
             // callback with null
             callback(null);
@@ -484,7 +482,7 @@ module.exports = {
             }
 
             // check username and password
-            const user=await ctx.call("v2.emails.accounts.authenticate", {
+            const user = await ctx.call("v2.emails.accounts.authenticate", {
                 username: auth.username,
                 password: auth.password,
             })

@@ -181,6 +181,7 @@ module.exports = {
          * 
          * @actions
          * @param {String} address - email address
+         * @param {String} name - email address name
          * 
          * @returns {Array} email addresess
          */
@@ -194,9 +195,13 @@ module.exports = {
                     type: "string",
                     optional: false,
                 },
+                name: {
+                    type: "string",
+                    optional: true,
+                },
             },
             async handler(ctx) {
-                return this.lookupByEmailAddress(ctx, ctx.params.address);
+                return this.lookupByEmailAddress(ctx, ctx.params.address, ctx.params.name);
             }
         },
 
@@ -478,10 +483,11 @@ module.exports = {
          * 
          * @param {Context} ctx - molecularjs context
          * @param {String} address - email address
+         * @param {String} name - email address name
          * 
          * @returns {Promise}
          */
-        async lookupByEmailAddress(ctx, address) {
+        async lookupByEmailAddress(ctx, address, name) {
 
             // normalize address
             address = this.normalize(ctx, address);
@@ -496,12 +502,26 @@ module.exports = {
                     { address: address },
                     { address: wildcard }
                 ],
-                type: "mailbox",
             };
 
-            return this.findEntities(null, {
+            const result = await this.findEntities(null, {
                 query,
             }, { raw: true });
+
+            if(result.length === 0) {
+                // create new email address
+                const newAddress = await this.createEntity(ctx, {
+                    address: address,
+                    name: name,
+                    type: "from",
+                });
+
+                // return new address
+                return [newAddress];
+            }
+
+            // return result
+            return result;
         },
 
         /**

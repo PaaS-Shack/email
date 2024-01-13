@@ -333,9 +333,6 @@ module.exports = {
                 if (data.type === 'attachment') {
                     // store attachment in s3
                     await this.processAttachment(ctx, data, envelope)
-                        .then(attachment => {
-                            email.attachments.push(attachment.id);
-                        })
                         .catch(err => {
                             this.logger.error(`Error processing attachment ${data.filename} ${err.message}`,err);
                         })

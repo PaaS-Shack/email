@@ -337,7 +337,7 @@ module.exports = {
                             email.attachments.push(attachment.id);
                         })
                         .catch(err => {
-                            this.logger.error(`Error processing attachment ${data.filename} ${err.message}`);
+                            this.logger.error(`Error processing attachment ${data.filename} ${err.message}`,err);
                         })
                 } else if (data.type === 'text') {
                     email.body = data.body;

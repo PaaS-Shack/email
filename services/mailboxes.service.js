@@ -1006,7 +1006,7 @@ module.exports = {
 
                 const found = mailbox.concat(alias);
 
-                this.logger.info(`Found ${found.length} mailboxes for ${id}`);
+                this.logger.info(`Found ${found.length} mailboxes for address ${id}`);
 
                 // loop mailbox
                 for (const box of found) {

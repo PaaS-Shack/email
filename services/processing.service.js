@@ -174,11 +174,11 @@ module.exports = {
         },
         async "emails.sessions.created"(ctx) {
             const session = ctx.params.data;
-            this.logger.info(`Session created ${session.id}`);
+            this.logger.info(`Session created ${session.id}, performing dns checks`);
 
             // check session
             this.checkSession(ctx, session).then((result) => {
-                this.logger.info(`Session checked ${session.id} ${result.remoteAddress} ${result.clientHostname}`);
+                this.logger.info(`Session checked ${session.id} R:${result.remoteAddress} C:${result.clientHostname}`);
                 // mark session as  checked
                 return ctx.call("v2.emails.sessions.verify", {
                     id: session.id,

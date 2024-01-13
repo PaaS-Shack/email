@@ -157,7 +157,7 @@ module.exports = {
 
         // default init config settings
         config: {
-
+            "emails.sessions.blockOnVerify": true,
         }
     },
 
@@ -531,6 +531,12 @@ module.exports = {
                         verified: ctx.params.verified,
                     }
                 };
+
+                // block session if verified is false
+                if (!ctx.params.verified && this.config["emails.sessions.blockOnVerify"]) {
+                    query.$set.blocked = true;
+                }
+
                 return this.updateEntity(ctx, query, { raw: true });
             }
         },

@@ -55,7 +55,28 @@ module.exports = {
      * service actions
      */
     actions: {
-
+        /**
+         * send email
+         * 
+         * @param {String} id - email id
+         * 
+         * @returns {Object} info - info object
+         */
+        send: {
+            rest: {
+                method: "POST",
+                path: "/send/:id"
+            },
+            params: {
+                id: {
+                    type: "string"
+                }
+            },
+            async handler(ctx) {
+                // send email
+                return this.sendEmail(ctx, ctx.params.id);
+            }
+        }
     },
 
     /**
@@ -473,75 +494,108 @@ module.exports = {
          * @returns {Object} email - email object
          */
         async sendEmail(ctx, id) {
-                // get email
-                const email = await ctx.call('v2.emails.get', {
-                    id
-                });
+            // get email
+            const email = await ctx.call('v2.emails.get', {
+                id
+            });
 
-                // mark message as sending
-                await ctx.call('v2.emails.update', {
-                    id,
-                    status: 'sending',
-                });
+            // mark message as sending
+            await ctx.call('v2.emails.update', {
+                id,
+                status: 'sending',
+            });
 
-                // get message
-                const message = await this.createMessage(ctx, email);
+            // get message
+            const message = await this.createMessage(ctx, email);
 
-                const domain = email.from.split('@')[1];
-                // get smtp pool
-                const pool = await this.getSmtpPool(ctx, domain);
-
-                // send email
-                return new Promise((resolve, reject) => {
-                    pool.sendMail(message, async (err, info) => {
-                        if (err) {
-                            // mark message as failed
-                            await ctx.call('v2.emails.update', {
-                                id,
-                                status: 'failed',
-                                error: err.message,
-                            });
-                            // reject
-                            reject(err);
-                        } else {
-                            // mark message as sent
-                            await ctx.call('v2.emails.update', {
-                                id,
-                                status: 'sent',
-                            });
-                            // resolve
-                            resolve(info);
-                        }
-                    });
-                });
+            // group by domain
+            const domains = new Map();
+            // loop to addresses
+            for (const to of email.to) {
+                // get domain
+                const domain = to.split('@')[1];
+                // add to domain
+                if (!domains.has(domain)) {
+                    domains.set(domain, []);
+                }
+                domains.get(domain).push(to);
             }
 
+            // loop domains
+            for (const [domain, to] of domains) {
+                // get smtp pool
+                const pool = await this.getSmtpPool(ctx, domain);
+                // send email
+                await this.sendEmailToPool(ctx, pool, message, id);
+            }
+
+            // return email
+            return email;
         },
 
         /**
-         * service created lifecycle event handler
+         * send email to pool
+         * 
+         * @param {Object} ctx - context
+         * @param {Object} pool - smtp pool
+         * @param {Object} message - message object
+         * @param {String} id - email id
+         * 
+         * @returns {Promise} resolves to email
          */
-        created() {
-            // connection pools for smtp servers
-            this.smtpPools = new Map();
-        },
-
-        /**
-         * service started lifecycle event handler
-         */
-        async started() {
-            // create smtp server
-           // await this.createSmtpServer();
-        },
-
-        /**
-         * service stopped lifecycle event handler
-         */
-        async stopped() {
-            // close smtp server
-           // await this.closeSmtpServer();
+        async sendEmailToPool(ctx, pool, message, id) {
+            // send email
+            return new Promise((resolve, reject) => {
+                pool.sendMail(message, (err, info) => {
+                    if (err) {
+                        // mark message as failed
+                        ctx.call('v2.emails.update', {
+                            id,
+                            status: 'failed',
+                            error: err.message,
+                        }).then(() => {
+                            reject(err);
+                        });
+                    } else {
+                        // mark message as sent
+                        ctx.call('v2.emails.update', {
+                            id,
+                            status: 'sent',
+                            messageId: info.messageId,
+                        }).then(() => {
+                            resolve(info);
+                        });
+                    }
+                });
+            });
         }
 
+    },
+
+    /**
+     * service created lifecycle event handler
+     */
+    created() {
+        // connection pools for smtp servers
+        this.smtpPools = new Map();
+    },
+
+    /**
+     * service started lifecycle event handler
+     */
+    async started() {
+        // create smtp server
+        // await this.createSmtpServer();
+    },
+
+    /**
+     * service stopped lifecycle event handler
+     */
+    async stopped() {
+        // close smtp server
+        // await this.closeSmtpServer();
     }
+
+}
 
 

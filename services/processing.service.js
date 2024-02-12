@@ -218,7 +218,6 @@ module.exports = {
             });
 
             return results;
-
         },
 
         /**

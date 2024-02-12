@@ -178,6 +178,8 @@ module.exports = {
             });
             transport.on('close', () => {
                 this.logger.info(`createTransport ${mxHost} ${port} close`);
+                // remove from pools
+                this.smtpPools.delete(mxHost);
             });
             transport.on('idle', () => {
                 this.logger.info(`createTransport ${mxHost} ${port} idle`);
